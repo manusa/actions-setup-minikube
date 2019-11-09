@@ -14,7 +14,7 @@ const install = async (minikube, inputs) => {
   core.addPath(minikubeDirectory);
   child_process.execSync(
     `
-    sudo -E minikube start --vm-driver=none --kubernetes-version ${inputs.kubernetesVersion} \
+    sudo -E ./minikube start --vm-driver=none --kubernetes-version ${inputs.kubernetesVersion} \
     && sudo chmod -R a+r /home/runner/.kube /home/runner/.minikube:
     `,
     {
