@@ -23,7 +23,9 @@ describe('load-inputs module test suite', () => {
       // Given
       process.env = {};
       // When - Then
-      expect(loadInputs).toThrow('Input required and not supplied: minikube version');
+      expect(loadInputs).toThrow(
+        'Input required and not supplied: minikube version'
+      );
     });
   });
 });
