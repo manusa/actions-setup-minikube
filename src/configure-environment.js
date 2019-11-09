@@ -1,7 +1,7 @@
 'use strict';
 
 const core = require('@actions/core');
-const execSync = require('exec-sync');
+const execSync = require('./exec-sync');
 
 const configureEnvironment = () => {
   core.info('Updating Environment configuration to support Minikube');
