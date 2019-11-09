@@ -13,7 +13,7 @@ const download = async inputs => {
       asset.name.indexOf('linux') >= 0 && asset.name.indexOf('sha256') < 0
   ).browser_download_url;
   core.info(`Minikube version found at: ${downloadUrl}`);
-  return await tc.downloadTool(downloadUrl);
+  return tc.downloadTool(downloadUrl);
 };
 
 module.exports = download;
