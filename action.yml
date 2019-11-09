@@ -1,0 +1,16 @@
+name: 'Setup OKD OpenShift Cluster'
+description: 'This action sets up a single node Kubernetes Cluster in your environment using Minikube'
+author: 'Marc Nuri'
+branding:
+  icon: anchor
+  color: blue
+inputs:
+  minikube version:
+    description: 'Version of Minikube to deploy'
+    required: true
+  kubernetes version:
+    description: 'Version of Kubernetes to deploy'
+    required: true
+runs:
+  using: 'node12'
+  main: 'src/index.js'

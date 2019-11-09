@@ -1,0 +1,49 @@
+{
+  "name": "github-actions-setup-minikube",
+  "version": "1.0.0",
+  "description": "Set up your GitHub Actions workflow with a specific version of Minikube and Kubernetes",
+  "main": "src/index.js",
+  "scripts": {
+    "format": "prettier --write src/**/*.js",
+    "format-check": "prettier --check src/**/*.js",
+    "test": "jest --passWithNoTests"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/manusa/actions-setup-minikube.git"
+  },
+  "keywords": [
+    "actions",
+    "github",
+    "docker",
+    "kubernetes",
+    "minikube",
+    "kubectl",
+    "k8s"
+  ],
+  "author": "Marc Nuri <marc@marcnuri.com> (http://blog.marcnuri.com)",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/manusa/actions-setup-minikube/issues"
+  },
+  "homepage": "https://github.com/manusa/actions-setup-minikube#readme",
+  "dependencies": {
+    "@actions/core": "^1.1.1",
+    "@actions/github": "^1.1.0",
+    "@actions/io": "^1.0.1",
+    "@actions/tool-cache": "^1.1.2",
+    "axios": "^0.19.0"
+  },
+  "devDependencies": {
+    "husky": "^3.0.9",
+    "jest": "^24.9.0",
+    "prettier": "^1.18.2"
+  },
+  "husky": {
+    "skipCI": true,
+    "hooks": {
+      "pre-commit": "npm run format",
+      "post-commit": "git rm --cached -r node_modules/ && npm prune --production && git add node_modules/* package-lock.json && git commit -m \"Husky commit - remove devDependencies from node_modules\" && npm install"
+    }
+  }
+}
