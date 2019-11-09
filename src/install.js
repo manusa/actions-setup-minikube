@@ -12,7 +12,9 @@ const install = async (minikube, inputs) => {
   await io.mv(minikube, path.join(minikubeDirectory, 'minikube'));
   core.exportVariable('MINIKUBE_HOME', minikubeDirectory);
   core.addPath(minikubeDirectory);
-  execSync(`sudo -E ./minikube start --vm-driver=none --kubernetes-version ${inputs.kubernetesVersion}`);
+  execSync(
+    `sudo -E ${minikubeDirectory}/minikube start --vm-driver=none --kubernetes-version ${inputs.kubernetesVersion}`
+  );
   execSync(`sudo chmod -R a+r /home/runner/.kube /home/runner/.minikube`);
   const minikubeVersion = execSync(`minikube version`)
     .toString()
