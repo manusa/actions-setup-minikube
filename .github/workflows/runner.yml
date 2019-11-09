@@ -13,5 +13,7 @@ jobs:
         uses: actions/setup-node@master
       - name: Run Action
         run: export INPUT_MINIKUBE_VERSION="v1.5.2" && export INPUT_KUBERNETES_VERSION="v1.16.2" && node src/index.js
-      - name: Validate environment
+      - name: Validate Minikube
         run: minikube status
+      - name: Validate Cluster
+        run: kubectl status

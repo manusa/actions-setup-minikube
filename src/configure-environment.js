@@ -7,7 +7,9 @@ const configureEnvironment = () => {
   core.info('Updating Environment configuration to support Minikube');
   execSync('sudo apt-get purge docker docker-engine docker.io containerd runc');
   execSync('sudo rm -rf /var/lib/docker');
-  execSync('curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -');
+  execSync(
+    'curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -'
+  );
   execSync(`
     sudo add-apt-repository \
         "deb [arch=amd64] https://download.docker.com/linux/ubuntu \
