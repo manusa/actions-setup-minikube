@@ -16,12 +16,12 @@ const install = async (minikube, inputs) => {
   execSync(
     `sudo -E ${minikubeDirectory}/minikube start --vm-driver=none --kubernetes-version ${inputs.kubernetesVersion}`
   );
-  execSync(`sudo chmod -R a+r /home/runner/.kube`);
+  execSync(`sudo chmod -R a+r /home/runner/.kube ${minikubeDirectory}/.minikube`);
   const minikubeVersion = child_process
     .execSync(`minikube version`)
     .toString()
     .replace(/[\n\r]/g, '');
-  console.log(`${minikubeVersion} installed successfully`);
+  core.info(`${minikubeVersion} installed successfully`);
 };
 
 module.exports = install;
