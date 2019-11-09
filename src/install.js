@@ -14,7 +14,7 @@ const install = async (minikube, inputs) => {
   core.exportVariable('MINIKUBE_HOME', minikubeDirectory);
   core.addPath(minikubeDirectory);
   child_process.execSync(
-    `minikube start --vm-driver=kvm2 --kubernetes-version ${inputs.kubernetesVersion}`,
+    `sudo minikube start --vm-driver=virtualbox --kubernetes-version ${inputs.kubernetesVersion}`,
     {
       stdio: 'inherit'
     }
