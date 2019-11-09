@@ -16,4 +16,4 @@ jobs:
       - name: Validate Minikube
         run: minikube status
       - name: Validate Cluster
-        run: kubectl status
+        run: kubectl get nodes
