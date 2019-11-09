@@ -1,0 +1,17 @@
+name: Run action and validate environment
+
+on: [push]
+
+jobs:
+  main:
+    name: Runner
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v1
+      - name: Setup Node
+        uses: actions/setup-node@master
+      - name: Run Action
+        run: export INPUT_MINIKUBE_VERSION="v1.5.2" && export INPUT_KUBERNETES_VERSION="v1.16.2" && node src/index.js
+      - name: Validate environment
+        run: minikube status
