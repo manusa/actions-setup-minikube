@@ -3,7 +3,7 @@
 const core = require('@actions/core');
 const child_process = require('child_process');
 const path = require('path');
-const io = require('io');
+const io = require('@actions/io');
 
 const install = async (minikube, inputs) => {
   core.info('Installing Minikube');
