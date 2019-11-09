@@ -1,10 +1,8 @@
 'use strict';
 
 const core = require('@actions/core');
-const tc = require('@actions/tool-cache');
 const child_process = require('child_process');
 const path = require('path');
-const io = require('@actions/io');
 
 const install = async (minikube, inputs) => {
   core.info('Installing Minikube');
@@ -14,7 +12,10 @@ const install = async (minikube, inputs) => {
   core.exportVariable('MINIKUBE_HOME', minikubeDirectory);
   core.addPath(minikubeDirectory);
   child_process.execSync(
-    `sudo minikube start --vm-driver=virtualbox --kubernetes-version ${inputs.kubernetesVersion}`,
+    `
+    sudo -E minikube start --vm-driver=none --kubernetes-version ${inputs.kubernetesVersion} \
+    && sudo chmod -R a+r /home/runner/.kube /home/runner/.minikube:
+    `,
     {
       stdio: 'inherit'
     }
