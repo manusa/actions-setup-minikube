@@ -7,7 +7,7 @@ const configureEnvironment = () => {
   core.info('Updating Environment configuration to support Minikube');
   child_process.execSync(
     `
-    apt-get purge docker docker-engine docker.io containerd runc \
+    sudo apt-get purge docker docker-engine docker.io containerd runc \
     && sudo rm -rf /var/lib/docker \
     && curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add - \
     && sudo add-apt-repository \
