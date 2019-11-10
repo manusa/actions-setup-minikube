@@ -1,4 +1,4 @@
-name: 'Setup OKD OpenShift Cluster'
+name: 'Setup Minikube Kubernetes Cluster'
 description: 'This action sets up a single node Kubernetes Cluster in your environment using Minikube'
 author: 'Marc Nuri'
 branding:

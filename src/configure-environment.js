@@ -5,7 +5,9 @@ const logExecSync = require('./exec').logExecSync;
 
 const configureEnvironment = () => {
   core.info('Updating Environment configuration to support Minikube');
-  logExecSync('sudo apt-get purge docker docker-engine docker.io containerd runc');
+  logExecSync(
+    'sudo apt-get purge docker docker-engine docker.io containerd runc'
+  );
   logExecSync('sudo rm -rf /var/lib/docker');
   logExecSync(
     'curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -'
