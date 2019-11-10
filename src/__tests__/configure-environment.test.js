@@ -1,18 +1,18 @@
 describe('configure-docker module test suite', () => {
   let configureEnvironment;
-  let execSync;
+  let logExecSync;
   beforeEach(() => {
     jest.resetModules();
-    jest.mock('../exec-sync');
+    jest.mock('../exec');
     configureEnvironment = require('../configure-environment');
-    execSync = require('../exec-sync');
+    logExecSync = require('../exec').logExecSync;
   });
   test('configureEnvironment, should run all configuration commands', () => {
     // Given
-    execSync.mockImplementation(() => {});
+    logExecSync.mockImplementation(() => {});
     // When
     configureEnvironment();
     // Then
-    expect(execSync).toHaveBeenCalledTimes(6);
+    expect(logExecSync).toHaveBeenCalledTimes(6);
   });
 });

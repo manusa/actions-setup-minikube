@@ -4,7 +4,7 @@ describe('download module test suite', () => {
   let tc;
   beforeEach(() => {
     jest.resetModules();
-    jest.mock('@actions/io');
+    jest.mock('@actions/io', () => ({}));
     jest.mock('@actions/tool-cache');
     jest.mock('@actions/core');
     jest.mock('axios');
