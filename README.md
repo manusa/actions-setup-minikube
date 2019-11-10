@@ -1,8 +1,8 @@
 Setup Minikube GitHub Action
 ===============================
 
-[<img src="https://github.com/manusa/actions-setup-minikube/workflows/Perform checks/badge.svg"/>](https://github.com/manusa/actions-setup-openshift/actions)
-[<img src="https://github.com/manusa/actions-setup-minikube/workflows/Run action and validate environment/badge.svg"/>](https://github.com/manusa/actions-setup-openshift/actions)
+[<img src="https://github.com/manusa/actions-setup-minikube/workflows/Perform checks/badge.svg"/>](https://github.com/manusa/actions-setup-minikube/actions)
+[<img src="https://github.com/manusa/actions-setup-minikube/workflows/Run action and validate environment/badge.svg"/>](https://github.com/manusa/actions-setup-minikube/actions)
 
 Set up your GitHub Actions workflow with a specific version of
 [Minikube](https://github.com/kubernetes/minikube)
@@ -28,7 +28,7 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v1
-      - name: Setup OpenShift
+      - name: Setup Minikube
         uses: manusa/actions-setup-minikube@v1.0.0
         with:
           minikube version: 'v1.5.2'
