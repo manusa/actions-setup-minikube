@@ -9,6 +9,7 @@ const loadInputs = () => {
   result.kubernetesVersion = core.getInput('kubernetes version', {
     required: true
   });
+  result.githubToken = core.getInput('github token');
   return result;
 };
 

@@ -7,7 +7,15 @@ const tc = require('@actions/tool-cache');
 const download = async inputs => {
   core.info(`Downloading Minikube  ${inputs.minikubeVersion}`);
   const tagInfoUrl = `https://api.github.com/repos/kubernetes/minikube/releases/tags/${inputs.minikubeVersion}`;
-  const tagInfo = await axios.get(tagInfoUrl);
+  const headers = {};
+  if (inputs.githubToken) {
+    headers.Authorization = `token ${inputs.githubToken}`
+  }
+  const tagInfo = await axios({
+    method: 'GET',
+    url: tagInfoUrl,
+    headers
+  });
   const downloadUrl = tagInfo.data.assets.find(
     asset =>
       asset.name.indexOf('linux') >= 0 && asset.name.indexOf('sha256') < 0

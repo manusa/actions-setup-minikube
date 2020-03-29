@@ -29,10 +29,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v1
       - name: Setup Minikube
-        uses: manusa/actions-setup-minikube@v1.0.0
+        uses: manusa/actions-setup-minikube@v1.0.1
         with:
           minikube version: 'v1.5.2'
           kubernetes version: 'v1.16.2'
+          github token: ${{ secrets.GITHUB_TOKEN }}
       - name: Interact with the cluster
         run: kubectl get nodes
 ```
@@ -43,6 +44,12 @@ jobs:
 | --------- | ----------- |
 | `minikube version` | Minikube [version](https://github.com/kubernetes/minikube/releases) to deploy |
 | `kubernetes version` | Kubernetes [version](https://github.com/kubernetes/kubernetes/releases) to deploy |
+
+### Optional input parameters
+
+| Parameter | Description |
+| --------- | ----------- |
+| `github token` | GITHUB_TOKEN secret value to access GitHub REST API with an unlimited number of requests |
 
 ## License
 
