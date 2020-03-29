@@ -11,11 +11,7 @@ describe('download module test suite', () => {
     tc = require('@actions/tool-cache');
     axios = require('axios');
     download = require('../download');
-  });
-  test('download, should download valid Linux version', async () => {
-    // Given
-    const inputs = {minikubeVersion: 'v1.33.7'};
-    axios.get.mockImplementationOnce(async () => ({
+    axios.mockImplementationOnce(async () => ({
       data: {
         assets: [
           {
@@ -30,12 +26,35 @@ describe('download module test suite', () => {
         ]
       }
     }));
+  });
+  test('download, should download valid Linux version', async () => {
+    // Given
+    const inputs = {minikubeVersion: 'v1.33.7'};
     tc.downloadTool.mockImplementationOnce(async () => {});
     // When
     await download(inputs);
     // Then
-    expect(axios.get).toHaveBeenCalledWith(
-      'https://api.github.com/repos/kubernetes/minikube/releases/tags/v1.33.7'
+    expect(axios).toHaveBeenCalledWith(
+      expect.objectContaining({
+        url:
+          'https://api.github.com/repos/kubernetes/minikube/releases/tags/v1.33.7'
+      })
+    );
+    expect(tc.downloadTool).toHaveBeenCalledWith('http://valid');
+  });
+  test('download with token, should download valid Linux version', async () => {
+    // Given
+    const inputs = {minikubeVersion: 'v1.33.7', githubToken: 'secret-token'};
+    tc.downloadTool.mockImplementationOnce(async () => {});
+    // When
+    await download(inputs);
+    // Then
+    expect(axios).toHaveBeenCalledWith(
+      expect.objectContaining({
+        url:
+          'https://api.github.com/repos/kubernetes/minikube/releases/tags/v1.33.7',
+        headers: {Authorization: 'token secret-token'}
+      })
     );
     expect(tc.downloadTool).toHaveBeenCalledWith('http://valid');
   });

@@ -9,14 +9,16 @@ describe('load-inputs module test suite', () => {
       // Given
       process.env = {
         INPUT_MINIKUBE_VERSION: 'v1.33.7',
-        INPUT_KUBERNETES_VERSION: 'v1.3.37'
+        INPUT_KUBERNETES_VERSION: 'v1.3.37',
+        INPUT_GITHUB_TOKEN: 'secret-token'
       };
       // When
       const result = loadInputs();
       // Then
       expect(result).toEqual({
         minikubeVersion: 'v1.33.7',
-        kubernetesVersion: 'v1.3.37'
+        kubernetesVersion: 'v1.3.37',
+        githubToken: 'secret-token'
       });
     });
     test('Required variables NOT in env, should throw error', () => {
