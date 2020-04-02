@@ -27,7 +27,7 @@ const installWindows =  async (minikube, inputs) => {
   const minikubeExeFile = path.join(minikubeDirectory, 'minikube.exe');
   await io.mv(minikube, minikubeExeFile);
   logExecSync(
-    `${minikubeExeFile} start --kubernetes-version ${inputs.kubernetesVersion}`
+    `${minikubeExeFile} start --vm-driver=virtualbox --kubernetes-version ${inputs.kubernetesVersion}`
   );
 };
 

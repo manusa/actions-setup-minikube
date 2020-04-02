@@ -26,6 +26,7 @@ const configureWindows = () => {
   logExecSync(
     'choco install virtualbox --params "/NoDesktopShortcut"'
   );
+  logExecSync('refreshenv');
 };
 
 const configureEnvironment = () => {
