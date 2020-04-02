@@ -27,7 +27,7 @@ jobs:
         shell: powershell
         run: |
           Enable-WindowsOptionalFeature -Online -FeatureName "Microsoft-Hyper-V" -NoRestart -All
-          Restart-Computer
+          Restart-Computer -Force
       - name: Checkout
         uses: actions/checkout@v1
       - name: Setup Node
