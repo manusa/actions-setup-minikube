@@ -21,13 +21,13 @@ jobs:
     name: Windows
     runs-on: windows-latest
     steps:
-#      - name: Enable Hyper-V
-#        run: DISM /Online /Enable-Feature /All /FeatureName:Microsoft-Hyper-V /Quiet
       - name: Enable Hyper-V
-        shell: powershell
-        run: |
-          Enable-WindowsOptionalFeature -Online -FeatureName "Microsoft-Hyper-V" -NoRestart -All
-          Restart-Computer -Force
+        run: DISM /Online /Enable-Feature /All /FeatureName:Microsoft-Hyper-V /NoRestart
+#      - name: Enable Hyper-V
+#        shell: powershell
+#        run: |
+#          Enable-WindowsOptionalFeature -Online -FeatureName "Microsoft-Hyper-V" -NoRestart -All
+#          Restart-Computer -Force
       - name: Checkout
         uses: actions/checkout@v1
       - name: Setup Node
