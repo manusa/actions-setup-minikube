@@ -7,12 +7,16 @@ const logExecSync = require('./exec').logExecSync;
 const path = require('path');
 const io = require('@actions/io');
 
+const updateEnvironment = minikubeDirectory => {
+  core.exportVariable('MINIKUBE_HOME', minikubeDirectory);
+  core.addPath(minikubeDirectory);
+};
+
 const installLinux =  async (minikube, inputs) => {
   logExecSync(`chmod +x ${minikube}`);
   const minikubeDirectory = path.dirname(minikube);
   await io.mv(minikube, path.join(minikubeDirectory, 'minikube'));
-  core.exportVariable('MINIKUBE_HOME', minikubeDirectory);
-  core.addPath(minikubeDirectory);
+  updateEnvironment(minikubeDirectory);
   logExecSync(
     `sudo -E ${minikubeDirectory}/minikube start --vm-driver=none --kubernetes-version ${inputs.kubernetesVersion}`
   );
@@ -26,8 +30,10 @@ const installWindows =  async (minikube, inputs) => {
   const minikubeDirectory = path.dirname(minikube);
   const minikubeExeFile = path.join(minikubeDirectory, 'minikube.exe');
   await io.mv(minikube, minikubeExeFile);
+  core.exportVariable('MINIKUBE_HOME', minikubeDirectory);
+  updateEnvironment(minikubeDirectory);
   logExecSync(
-    `${minikubeExeFile} start --vm-driver=virtualbox --kubernetes-version ${inputs.kubernetesVersion}`
+    `${minikubeExeFile} start --vm-driver=none --kubernetes-version ${inputs.kubernetesVersion}`
   );
 };
 
