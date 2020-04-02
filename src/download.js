@@ -3,6 +3,7 @@
 const core = require('@actions/core');
 const axios = require('axios');
 const tc = require('@actions/tool-cache');
+const {isLinux, isWindows} = require('./os');
 
 const download = async inputs => {
   core.info(`Downloading Minikube  ${inputs.minikubeVersion}`);
@@ -16,10 +17,15 @@ const download = async inputs => {
     url: tagInfoUrl,
     headers
   });
-  const downloadUrl = tagInfo.data.assets.find(
-    asset =>
-      asset.name.indexOf('linux') >= 0 && asset.name.indexOf('sha256') < 0
-  ).browser_download_url;
+  let filter;
+  if (isLinux()) {
+    filter = asset =>
+      asset.name.indexOf('linux') >= 0 && asset.name.indexOf('sha256') < 0;
+  } else if (isWindows()) {
+    filter = asset =>
+      asset.name.indexOf('windows') >= 0 && asset.name.indexOf('sha256') < 0;
+  }
+  const downloadUrl = tagInfo.data.assets.find(filter).browser_download_url;
   core.info(`Minikube version found at: ${downloadUrl}`);
   return tc.downloadTool(downloadUrl);
 };

@@ -3,8 +3,8 @@ name: Run action and validate environment
 on: [push]
 
 jobs:
-  main:
-    name: Runner
+  linux:
+    name: Linux
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -17,3 +17,22 @@ jobs:
         run: minikube status
       - name: Validate Cluster
         run: kubectl get nodes
+  windows:
+    name: Windows
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v1
+      - name: Setup Node
+        uses: actions/setup-node@master
+      - name: Run Action
+        shell: cmd
+        run: |
+          set INPUT_MINIKUBE_VERSION=v1.5.2
+          set INPUT_KUBERNETES_VERSION=v1.17.2
+          set INPUT_GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN  }}
+          node src\index.js
+#      - name: Validate Minikube
+#        run: minikube status
+#      - name: Validate Cluster
+#        run: kubectl get nodes

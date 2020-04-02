@@ -8,15 +8,6 @@ describe('check-environment module test suite', () => {
     fs = require('fs');
   });
   describe('checkEnvironment', () => {
-    test('OS is windows, should throw Error', () => {
-      // Given
-      Object.defineProperty(process, 'platform', {value: 'win32'});
-      process.platform = 'win32';
-      // When - Then
-      expect(checkEnvironment).toThrow(
-        'Unsupported OS, action only works in Ubuntu 18'
-      );
-    });
     test('OS is Linux but not Ubuntu, should throw Error', () => {
       // Given
       Object.defineProperty(process, 'platform', {value: 'linux'});
@@ -51,6 +42,13 @@ describe('check-environment module test suite', () => {
         VERSION="18.04.3 LTS (Bionic Beaver)"
         `
       );
+      // When - Then
+      expect(checkEnvironment).not.toThrow();
+    });
+    test('OS is windows, should not throw Error', () => {
+      // Given
+      Object.defineProperty(process, 'platform', {value: 'win32'});
+      process.platform = 'win32';
       // When - Then
       expect(checkEnvironment).not.toThrow();
     });
