@@ -33,8 +33,11 @@ const installWindows =  async (minikube, inputs) => {
   core.exportVariable('MINIKUBE_HOME', minikubeDirectory);
   updateEnvironment(minikubeDirectory);
   logExecSync(
-    `${minikubeExeFile} start --vm-driver=hyperv --kubernetes-version ${inputs.kubernetesVersion}`
+    `${minikubeExeFile} start --vm-driver=virtualbox --no-vtx-check --kubernetes-version ${inputs.kubernetesVersion}`
   );
+  // logExecSync(
+  //   `${minikubeExeFile} start --vm-driver=hyperv --kubernetes-version ${inputs.kubernetesVersion}`
+  // );
 };
 
 const install = async (minikube, inputs) => {
