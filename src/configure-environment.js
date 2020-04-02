@@ -23,10 +23,10 @@ const configureLinuxEnvironment = () => {
 };
 
 const configureWindows = () => {
-  logExecSync(
-    'choco install virtualbox --params "/NoDesktopShortcut"'
-  );
-  logExecSync('refreshenv');
+  // logExecSync(
+  //   'choco install virtualbox --params "/NoDesktopShortcut"'
+  // );
+  // logExecSync('refreshenv');
   // logExecSync(
   //   'DISM /Online /Enable-Feature /All /FeatureName:Microsoft-Hyper-V'
   // );

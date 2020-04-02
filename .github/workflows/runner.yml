@@ -23,6 +23,10 @@ jobs:
     steps:
 #      - name: Enable Hyper-V
 #        run: DISM /Online /Enable-Feature /All /FeatureName:Microsoft-Hyper-V
+      - name: Enable Hyper-V
+        run: |
+          Enable-WindowsOptionalFeature -Online -FeatureName Microsoft-Hyper-V -All
+          Restart-Computer
       - name: Checkout
         uses: actions/checkout@v1
       - name: Setup Node
