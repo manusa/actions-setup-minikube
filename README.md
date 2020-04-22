@@ -29,10 +29,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v1
       - name: Setup Minikube
-        uses: manusa/actions-setup-minikube@v1.0.1
+        uses: manusa/actions-setup-minikube@v1.0.2
         with:
-          minikube version: 'v1.5.2'
-          kubernetes version: 'v1.16.2'
+          minikube version: 'v1.9.2'
+          kubernetes version: 'v1.18.2'
           github token: ${{ secrets.GITHUB_TOKEN }}
       - name: Interact with the cluster
         run: kubectl get nodes
