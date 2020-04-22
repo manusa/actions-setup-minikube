@@ -19,7 +19,7 @@ const configureEnvironment = () => {
         stable"
   `);
   logExecSync('sudo apt-get update');
-  logExecSync('sudo apt-get install docker-ce docker-ce-cli');
+  logExecSync('sudo apt-get install -y docker-ce docker-ce-cli conntrack');
 };
 
 module.exports = configureEnvironment;
