@@ -18,7 +18,8 @@ describe('load-inputs module test suite', () => {
         minikubeVersion: 'v1.33.7',
         kubernetesVersion: 'v1.3.37',
         githubToken: '',
-        driver: ''
+        driver: '',
+        startArgs: ''
       });
     });
     test('All variables in env, should return valid inputs', () => {
@@ -27,7 +28,8 @@ describe('load-inputs module test suite', () => {
         INPUT_MINIKUBE_VERSION: 'v1.33.7',
         INPUT_KUBERNETES_VERSION: 'v1.3.37',
         INPUT_GITHUB_TOKEN: 'secret-token',
-        INPUT_DRIVER: 'minikube-driver'
+        INPUT_DRIVER: 'minikube-driver',
+        INPUT_START_ARGS: '--mount=Aitana --character=Alex'
       };
       // When
       const result = loadInputs();
@@ -36,7 +38,8 @@ describe('load-inputs module test suite', () => {
         minikubeVersion: 'v1.33.7',
         kubernetesVersion: 'v1.3.37',
         githubToken: 'secret-token',
-        driver: 'minikube-driver'
+        driver: 'minikube-driver',
+        startArgs: '--mount=Aitana --character=Alex'
       });
     });
     test('Required variables NOT in env, should throw error', () => {

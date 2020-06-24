@@ -49,8 +49,9 @@ jobs:
 
 | Parameter | Description |
 | --------- | ----------- |
-| `github token` | GITHUB_TOKEN secret value to access GitHub REST API with an unlimited number of requests |
+| `github token` | GITHUB_TOKEN secret value to access GitHub REST API with an unlimited number of requests (optional but recommended) |
 | `driver` | Minikube [driver](https://minikube.sigs.k8s.io/docs/drivers/) to use. This action supports `none` (default if not specified) or `docker` |
+| `start args` | Additional arguments to append to `minikube start` command |
 
 ## License
 
