@@ -13,6 +13,8 @@ inputs:
     required: true
   github token:
     description: 'GITHUB_TOKEN to be able to perform requests to GH REST API (with no limit)'
+  driver:
+    desrciption: 'Minikube [driver](https://minikube.sigs.k8s.io/docs/drivers/) to use. This action supports `none` (default if not specified) or `docker`'
 runs:
   using: 'node12'
   main: 'src/index.js'
