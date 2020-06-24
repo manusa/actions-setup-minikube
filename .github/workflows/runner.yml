@@ -29,7 +29,7 @@ jobs:
       - name: Validate Cluster
         run: kubectl get nodes
       - name: Validate default driver
-        run: 'cat $MINIKUBE_HOME/.minikube/machines/minikube/config.json | grep ''"DriverName": "none"'''
+        run: 'cat $MINIKUBE_HOME/.minikube/machines/minikube/config.json | jq ".DriverName" | grep none'
   docker-driver:
     name: Run with Docker driver
     runs-on: ubuntu-latest
@@ -50,4 +50,25 @@ jobs:
       - name: Validate Cluster
         run: kubectl get nodes
       - name: Validate Docker driver
-        run: 'cat $MINIKUBE_HOME/.minikube/machines/minikube/config.json | grep ''"DriverName": "docker"'''
+        run: 'cat $MINIKUBE_HOME/.minikube/machines/minikube/config.json | jq ".DriverName" | grep docker'
+  extra-args:
+    name: Run with extra arguments
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Setup Node
+        uses: actions/setup-node@master
+      - name: Test Action
+        uses: ./
+        with:
+          minikube version: v1.9.2
+          kubernetes version: v1.18.2
+          github token: ${{ secrets.GITHUB_TOKEN }}
+          start args: '--addons=registry'
+      - name: Validate Minikube
+        run: minikube status | grep Running
+      - name: Validate Cluster
+        run: kubectl get nodes
+      - name: Validate enabled addon in arg
+        run: minikube addons list -o json | jq '.registry.Status' | grep enabled

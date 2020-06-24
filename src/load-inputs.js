@@ -11,6 +11,7 @@ const loadInputs = () => {
   });
   result.githubToken = core.getInput('github token');
   result.driver = core.getInput('driver');
+  result.startArgs = core.getInput('start args');
   return result;
 };
 
