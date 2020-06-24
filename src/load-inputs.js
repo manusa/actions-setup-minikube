@@ -10,6 +10,7 @@ const loadInputs = () => {
     required: true
   });
   result.githubToken = core.getInput('github token');
+  result.driver = core.getInput('driver');
   return result;
 };
 

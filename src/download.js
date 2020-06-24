@@ -9,7 +9,7 @@ const download = async inputs => {
   const tagInfoUrl = `https://api.github.com/repos/kubernetes/minikube/releases/tags/${inputs.minikubeVersion}`;
   const headers = {};
   if (inputs.githubToken) {
-    headers.Authorization = `token ${inputs.githubToken}`
+    headers.Authorization = `token ${inputs.githubToken}`;
   }
   const tagInfo = await axios({
     method: 'GET',

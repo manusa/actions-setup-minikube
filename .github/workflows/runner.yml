@@ -1,10 +1,14 @@
 name: Run action and validate environment
 
-on: [push]
+on:
+  push:
+    branches:
+      - master
+  pull_request:
 
 jobs:
-  main:
-    name: Runner
+  default-inputs:
+    name: Run with defaults
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -21,6 +25,29 @@ jobs:
           kubernetes version: ${{ matrix.kubernetes }}
           github token: ${{ secrets.GITHUB_TOKEN }}
       - name: Validate Minikube
-        run: minikube status
+        run: minikube status | grep Running
       - name: Validate Cluster
         run: kubectl get nodes
+      - name: Validate default driver
+        run: 'cat $MINIKUBE_HOME/.minikube/machines/minikube/config.json | grep ''"DriverName": "none"'''
+  docker-driver:
+    name: Run with Docker driver
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Setup Node
+        uses: actions/setup-node@master
+      - name: Test Action
+        uses: ./
+        with:
+          minikube version: v1.9.2
+          kubernetes version: v1.18.2
+          github token: ${{ secrets.GITHUB_TOKEN }}
+          driver: docker
+      - name: Validate Minikube
+        run: minikube status | grep Running
+      - name: Validate Cluster
+        run: kubectl get nodes
+      - name: Validate Docker driver
+        run: 'cat $MINIKUBE_HOME/.minikube/machines/minikube/config.json | grep ''"DriverName": "docker"'''

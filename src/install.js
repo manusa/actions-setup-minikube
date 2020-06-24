@@ -6,6 +6,14 @@ const logExecSync = require('./exec').logExecSync;
 const path = require('path');
 const io = require('@actions/io');
 
+const driver = inputs => inputs.driver || 'none';
+const sudo = inputs => {
+  if (inputs.driver === 'docker') {
+    return '';
+  }
+  return 'sudo -E';
+};
+
 const install = async (minikube, inputs) => {
   core.info('Installing Minikube');
   logExecSync(`chmod +x ${minikube}`);
@@ -14,7 +22,9 @@ const install = async (minikube, inputs) => {
   core.exportVariable('MINIKUBE_HOME', minikubeDirectory);
   core.addPath(minikubeDirectory);
   logExecSync(
-    `sudo -E ${minikubeDirectory}/minikube start --vm-driver=none --kubernetes-version ${inputs.kubernetesVersion}`
+    `${sudo(inputs)} ${minikubeDirectory}/minikube start --vm-driver=${driver(
+      inputs
+    )} --kubernetes-version ${inputs.kubernetesVersion}`
   );
   logExecSync(`sudo chown -R $USER $HOME/.kube ${minikubeDirectory}/.minikube`);
   logExecSync(
