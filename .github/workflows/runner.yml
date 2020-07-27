@@ -65,7 +65,7 @@ jobs:
           minikube version: v1.9.2
           kubernetes version: v1.18.2
           github token: ${{ secrets.GITHUB_TOKEN }}
-          start args: '--addons=registry'
+          start args: '--addons=registry --addons=ingress'
       - name: Validate Minikube
         run: minikube status | grep Running
       - name: Validate Cluster
