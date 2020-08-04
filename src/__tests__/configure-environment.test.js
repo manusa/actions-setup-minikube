@@ -13,6 +13,6 @@ describe('configure-docker module test suite', () => {
     // When
     configureEnvironment();
     // Then
-    expect(logExecSync).toHaveBeenCalledTimes(6);
+    expect(logExecSync).toHaveBeenCalledTimes(2);
   });
 });
