@@ -21,7 +21,7 @@ jobs:
       - name: Test Action
         uses: ./
         with:
-          minikube version: v1.13.0
+          minikube version: v1.13.1
           kubernetes version: ${{ matrix.kubernetes }}
           github token: ${{ secrets.GITHUB_TOKEN }}
       - name: Validate Minikube
@@ -41,7 +41,7 @@ jobs:
       - name: Test Action
         uses: ./
         with:
-          minikube version: v1.13.0
+          minikube version: v1.13.1
           kubernetes version: v1.19.2
           github token: ${{ secrets.GITHUB_TOKEN }}
           driver: docker
@@ -83,7 +83,7 @@ jobs:
       - name: Test Action
         uses: ./
         with:
-          minikube version: v1.13.0
+          minikube version: v1.13.1
           kubernetes version: v1.12.0
           github token: ${{ secrets.GITHUB_TOKEN }}
           start args: '--force'
