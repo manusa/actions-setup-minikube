@@ -28,16 +28,16 @@
   },
   "homepage": "https://github.com/manusa/actions-setup-minikube#readme",
   "dependencies": {
-    "@actions/core": "^1.2.4",
+    "@actions/core": "^1.2.6",
     "@actions/github": "^4.0.0",
     "@actions/io": "^1.0.2",
     "@actions/tool-cache": "^1.6.0",
-    "axios": "^0.19.2"
+    "axios": "^0.20.0"
   },
   "devDependencies": {
-    "husky": "^4.2.5",
-    "jest": "^26.2.2",
-    "prettier": "^2.0.5"
+    "husky": "^4.3.0",
+    "jest": "^26.5.2",
+    "prettier": "^2.1.2"
   },
   "husky": {
     "skipCI": true,
