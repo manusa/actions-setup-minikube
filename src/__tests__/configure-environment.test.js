@@ -15,4 +15,12 @@ describe('configure-docker module test suite', () => {
     // Then
     expect(logExecSync).toHaveBeenCalledTimes(2);
   });
+  test('configureEnvironment with docker driver, should run all configuration commands', () => {
+    // Given
+    logExecSync.mockImplementation(() => {});
+    // When
+    configureEnvironment({driver: 'docker'});
+    // Then
+    expect(logExecSync).toHaveBeenCalledTimes(3);
+  });
 });
