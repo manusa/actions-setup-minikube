@@ -20,35 +20,48 @@ describe('check-environment module test suite', () => {
     test('OS is Linux but not Ubuntu, should throw Error', () => {
       // Given
       Object.defineProperty(process, 'platform', {value: 'linux'});
-      fs.existsSync.mockImplementationOnce(() => false);
-      fs.readFileSync.mockImplementationOnce(() => 'SOME DIFFERENT OS');
+      fs.existsSync.mockImplementation(() => false);
+      fs.readFileSync.mockImplementation(() => 'SOME DIFFERENT OS');
       // When - Then
       expect(checkEnvironment).toThrow(
         'Unsupported OS, action only works in Ubuntu 18'
       );
-      expect(fs.existsSync).toHaveBeenCalledTimes(1);
+      expect(fs.existsSync).toHaveBeenCalled();
       expect(fs.readFileSync).toHaveBeenCalledTimes(0);
     });
     test('OS is Linux but not Ubuntu 18, should throw Error', () => {
       // Given
       Object.defineProperty(process, 'platform', {value: 'linux'});
-      fs.existsSync.mockImplementationOnce(() => true);
-      fs.readFileSync.mockImplementationOnce(() => 'SOME DIFFERENT OS');
+      fs.existsSync.mockImplementation(() => true);
+      fs.readFileSync.mockImplementation(() => 'SOME DIFFERENT OS');
       // When - Then
       expect(checkEnvironment).toThrow(
         'Unsupported OS, action only works in Ubuntu 18'
       );
-      expect(fs.existsSync).toHaveBeenCalledTimes(1);
-      expect(fs.readFileSync).toHaveBeenCalledTimes(1);
+      expect(fs.existsSync).toHaveBeenCalled();
+      expect(fs.readFileSync).toHaveBeenCalled();
     });
-    test('OS is Linux, should not throw Error', () => {
+    test('OS is Linux and Ubuntu 18, should not throw Error', () => {
       // Given
       Object.defineProperty(process, 'platform', {value: 'linux'});
-      fs.existsSync.mockImplementationOnce(() => true);
-      fs.readFileSync.mockImplementationOnce(
+      fs.existsSync.mockImplementation(() => true);
+      fs.readFileSync.mockImplementation(
         () => `
         NAME="Ubuntu"
         VERSION="18.04.3 LTS (Bionic Beaver)"
+        `
+      );
+      // When - Then
+      expect(checkEnvironment).not.toThrow();
+    });
+    test('OS is Linux and Ubuntu 20, should not throw Error', () => {
+      // Given
+      Object.defineProperty(process, 'platform', {value: 'linux'});
+      fs.existsSync.mockImplementation(() => true);
+      fs.readFileSync.mockImplementation(
+        () => `
+        NAME="Ubuntu"
+        VERSION="20.04.1 LTS (Focal Fossa)"
         `
       );
       // When - Then

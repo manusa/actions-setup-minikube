@@ -8,7 +8,7 @@ Set up your GitHub Actions workflow with a specific version of
 [Minikube](https://github.com/kubernetes/minikube)
 and [Kubernetes](https://github.com/kubernetes/kubernetes).
 
-_Currently only Linux Ubuntu 18.04
+_Currently only Linux Ubuntu 18.04 or 20.04
 [CI environment](https://help.github.com/en/github/automating-your-workflow-with-github-actions/virtual-environments-for-github-actions)
 is supported._
 
