@@ -30,6 +30,8 @@ jobs:
         run: kubectl get nodes
       - name: Validate default driver
         run: 'cat $MINIKUBE_HOME/.minikube/machines/minikube/config.json | jq ".DriverName" | grep none'
+      - name: Validate ssh access
+        run: minikube ssh --native-ssh=false "cat /etc/os-release"
   docker-driver:
     name: Run with Docker driver
     runs-on: ubuntu-latest
