@@ -30,6 +30,9 @@ const install = async (minikube, inputs) => {
   logExecSync(
     `sudo chmod -R a+r /home/runner/.kube ${minikubeDirectory}/.minikube`
   );
+  logExecSync(
+    `sudo find ${minikubeDirectory}/.minikube -name id_rsa -exec chmod 600 {} \\;`
+  );
   const minikubeVersion = execSync(`minikube version`)
     .toString()
     .replace(/[\n\r]/g, '');

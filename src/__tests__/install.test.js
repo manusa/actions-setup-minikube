@@ -26,7 +26,7 @@ describe('install module test suite', () => {
     // When
     await install('minikubeFileLocation', inputs);
     // Then
-    expect(exec.logExecSync).toHaveBeenCalledTimes(4);
+    expect(exec.logExecSync).toHaveBeenCalledTimes(5);
     expect(exec.execSync).toHaveBeenCalledTimes(1);
   });
 });
