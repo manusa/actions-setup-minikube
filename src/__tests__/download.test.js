@@ -36,8 +36,7 @@ describe('download module test suite', () => {
     // Then
     expect(axios).toHaveBeenCalledWith(
       expect.objectContaining({
-        url:
-          'https://api.github.com/repos/kubernetes/minikube/releases/tags/v1.33.7'
+        url: 'https://api.github.com/repos/kubernetes/minikube/releases/tags/v1.33.7'
       })
     );
     expect(tc.downloadTool).toHaveBeenCalledWith('http://valid');
@@ -51,8 +50,7 @@ describe('download module test suite', () => {
     // Then
     expect(axios).toHaveBeenCalledWith(
       expect.objectContaining({
-        url:
-          'https://api.github.com/repos/kubernetes/minikube/releases/tags/v1.33.7',
+        url: 'https://api.github.com/repos/kubernetes/minikube/releases/tags/v1.33.7',
         headers: {Authorization: 'token secret-token'}
       })
     );
