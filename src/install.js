@@ -28,7 +28,7 @@ const install = async (minikube, inputs) => {
   );
   logExecSync(`sudo chown -R $USER $HOME/.kube ${minikubeDirectory}/.minikube`);
   logExecSync(
-    `sudo chmod -R a+r /home/runner/.kube ${minikubeDirectory}/.minikube`
+    `sudo chmod -R a+r $HOME/.kube ${minikubeDirectory}/.minikube`
   );
   logExecSync(
     `sudo find ${minikubeDirectory}/.minikube -name id_rsa -exec chmod 600 {} \\;`
