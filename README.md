@@ -29,7 +29,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v1
       - name: Setup Minikube
-        uses: manusa/actions-setup-minikube@v2.4.1
+        uses: manusa/actions-setup-minikube@v2.4.2
         with:
           minikube version: 'v1.16.0'
           kubernetes version: 'v1.19.2'
@@ -51,7 +51,7 @@ jobs:
 | --------- | ----------- |
 | `github token` | GITHUB_TOKEN secret value to access GitHub REST API with an unlimited number of requests (optional but recommended) |
 | `driver` | Minikube [driver](https://minikube.sigs.k8s.io/docs/drivers/) to use. This action supports `none` (default if not specified) or `docker` |
-| `start args` | Additional arguments to append to `minikube start` command |
+| `start args` | Additional arguments to append to [`minikube start`](https://minikube.sigs.k8s.io/docs/commands/start/) command |
 
 ## License
 
