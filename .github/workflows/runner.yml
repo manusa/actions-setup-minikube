@@ -64,8 +64,8 @@ jobs:
       - name: Test Action
         uses: ./
         with:
-          minikube version: v1.16.0
-          kubernetes version: v1.19.2
+          minikube version: v1.21.0
+          kubernetes version: v1.21.0
           github token: ${{ secrets.GITHUB_TOKEN }}
           start args: '--addons=registry --addons=metrics-server'
       - name: Validate Minikube
@@ -74,6 +74,27 @@ jobs:
         run: kubectl get nodes
       - name: Validate enabled addon in arg
         run: minikube addons list -o json | jq '.registry.Status' | grep enabled
+  ingress:
+    name: Run with ingress enabled
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Setup Node
+        uses: actions/setup-node@master
+      - name: Test Action
+        uses: ./
+        with:
+          minikube version: v1.21.0
+          kubernetes version: v1.21.0
+          github token: ${{ secrets.GITHUB_TOKEN }}
+          start args: '--addons=ingress'
+      - name: Validate Minikube
+        run: minikube status | grep Running
+      - name: Validate Cluster
+        run: kubectl get nodes
+      - name: Validate enabled addon in arg
+        run: minikube addons list -o json | jq '.ingress.Status' | grep enabled
   legacy:
     name: Run for legacy/old versions
     runs-on: ubuntu-18.04
