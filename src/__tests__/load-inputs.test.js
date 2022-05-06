@@ -19,6 +19,7 @@ describe('load-inputs module test suite', () => {
         kubernetesVersion: 'v1.3.37',
         githubToken: '',
         driver: '',
+        containerRuntime: '',
         startArgs: ''
       });
     });
@@ -29,6 +30,7 @@ describe('load-inputs module test suite', () => {
         INPUT_KUBERNETES_VERSION: 'v1.3.37',
         INPUT_GITHUB_TOKEN: 'secret-token',
         INPUT_DRIVER: 'minikube-driver',
+        INPUT_CONTAINER_RUNTIME: 'cri-o',
         INPUT_START_ARGS: '--mount=Aitana --character=Alex'
       };
       // When
@@ -39,6 +41,7 @@ describe('load-inputs module test suite', () => {
         kubernetesVersion: 'v1.3.37',
         githubToken: 'secret-token',
         driver: 'minikube-driver',
+        containerRuntime: 'cri-o',
         startArgs: '--mount=Aitana --character=Alex'
       });
     });

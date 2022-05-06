@@ -2,6 +2,7 @@
 
 const core = require('@actions/core');
 const logExecSync = require('./exec').logExecSync;
+const download = require('./download');
 const MAX_ATTEMPTS = 10;
 const RETRY_WAIT_MILLIS = 5_000;
 
@@ -28,6 +29,7 @@ const configureEnvironment = async (inputs = {}) => {
     core.info('Waiting for Docker to be ready');
     await waitForDocker();
   }
+  await download.installCriCtl(inputs);
 };
 
 module.exports = configureEnvironment;

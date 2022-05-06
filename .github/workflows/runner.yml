@@ -24,6 +24,8 @@ jobs:
           minikube version: v1.25.2
           kubernetes version: ${{ matrix.kubernetes }}
           github token: ${{ secrets.GITHUB_TOKEN }}
+          # Required for v1.24 support TODO - See if Minikube fixes this
+          container runtime: containerd
       - name: Validate Minikube
         run: minikube status | grep Running
       - name: Validate Cluster
@@ -85,7 +87,7 @@ jobs:
       - name: Test Action
         uses: ./
         with:
-          minikube version: v1.24.0
+          minikube version: v1.25.2
           kubernetes version: v1.23.0
           github token: ${{ secrets.GITHUB_TOKEN }}
           start args: '--addons=ingress'
