@@ -12,7 +12,7 @@ const run = async () => {
   checkEnvironment();
   const inputs = loadInputs();
   await configureEnvironment(inputs);
-  const downloadedFile = await download(inputs);
+  const downloadedFile = await download.downloadMinikube(inputs);
   await install(downloadedFile, inputs);
 };
 

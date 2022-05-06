@@ -40,18 +40,19 @@ jobs:
 
 ### Required input parameters
 
-| Parameter | Description |
-| --------- | ----------- |
-| `minikube version` | Minikube [version](https://github.com/kubernetes/minikube/releases) to deploy |
+| Parameter            | Description                                                                       |
+|----------------------|-----------------------------------------------------------------------------------|
+| `minikube version`   | Minikube [version](https://github.com/kubernetes/minikube/releases) to deploy     |
 | `kubernetes version` | Kubernetes [version](https://github.com/kubernetes/kubernetes/releases) to deploy |
 
 ### Optional input parameters
 
-| Parameter | Description |
-| --------- | ----------- |
-| `github token` | GITHUB_TOKEN secret value to access GitHub REST API with an unlimited number of requests (optional but recommended) |
-| `driver` | Minikube [driver](https://minikube.sigs.k8s.io/docs/drivers/) to use. This action supports `none` (default if not specified) or `docker` |
-| `start args` | Additional arguments to append to [`minikube start`](https://minikube.sigs.k8s.io/docs/commands/start/) command |
+| Parameter           | Description                                                                                                                              |
+|---------------------|------------------------------------------------------------------------------------------------------------------------------------------|
+| `github token`      | GITHUB_TOKEN secret value to access GitHub REST API with an unlimited number of requests (optional but recommended)                      |
+| `driver`            | Minikube [driver](https://minikube.sigs.k8s.io/docs/drivers/) to use. This action supports `none` (default if not specified) or `docker` |
+| `container runtime` | The container runtime to be used (valid options: docker, cri-o, containerd)                                                              |
+| `start args`        | Additional arguments to append to [`minikube start`](https://minikube.sigs.k8s.io/docs/commands/start/) command                          |
 
 ## License
 

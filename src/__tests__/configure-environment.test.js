@@ -4,6 +4,7 @@ describe('configure-docker module test suite', () => {
   beforeEach(() => {
     jest.resetModules();
     jest.mock('../exec');
+    jest.mock('../download');
     configureEnvironment = require('../configure-environment');
     logExecSync = require('../exec').logExecSync;
   });
