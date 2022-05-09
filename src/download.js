@@ -51,7 +51,12 @@ const installCriCtl = async (inputs = {}) => {
 
 const installCriDockerd = async (inputs = {}) => {
   core.info(`Downloading cri-dockerd`);
-  const releaseUrl = 'https://api.github.com/repos/Mirantis/cri-dockerd/releases/latest';
+  // In case there are future releases, we can explore the usage of the latest release
+  // const tagInfo = await getTagInfo({inputs, releaseUrl});
+  // const tag = tagInfo.data.name;
+  // const releaseUrl = 'https://api.github.com/repos/Mirantis/cri-dockerd/releases/latest';
+  const tag = 'v0.2.0';
+  const releaseUrl = `https://api.github.com/repos/Mirantis/cri-dockerd/releases/tags/${tag}`;
   const binaryTar = await downloadGitHubArtifact({
     inputs,
     releaseUrl,
@@ -59,8 +64,6 @@ const installCriDockerd = async (inputs = {}) => {
       isLinux(asset.name) && isAmd64(asset.name) && !isSignature(asset.name) && asset.name.indexOf('cri-dockerd') === 0
   });
   await tc.extractTar(binaryTar, '/usr/local/bin');
-  const tagInfo = await getTagInfo({inputs, releaseUrl});
-  const tag = tagInfo.data.name;
   const sourceTar = await tc.downloadTool(`https://github.com/Mirantis/cri-dockerd/archive/refs/tags/${tag}.tar.gz`);
   const sourceDir = await tc.extractTar(sourceTar);
   const sourceContent = fs.readdirSync(sourceDir, {withFileTypes: true}).filter(f => f.isDirectory()).map(f => f.name)[0];
