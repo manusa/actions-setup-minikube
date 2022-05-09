@@ -24,8 +24,6 @@ jobs:
           minikube version: v1.25.2
           kubernetes version: ${{ matrix.kubernetes }}
           github token: ${{ secrets.GITHUB_TOKEN }}
-          # Required for v1.24 support TODO - See if Minikube fixes this
-          container runtime: containerd
       - name: Validate Minikube
         run: minikube status | grep Running
       - name: Validate Cluster
@@ -97,6 +95,31 @@ jobs:
         run: kubectl get nodes
       - name: Validate enabled addon in arg
         run: minikube addons list -o json | jq '.ingress.Status' | grep enabled
+  container-runtime:
+    name: Run with container runtime config
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        kubernetes: [v1.24.0,v1.17.5]
+        container_runtime: ['containerd']
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Setup Node
+        uses: actions/setup-node@master
+      - name: Test Action
+        uses: ./
+        with:
+          minikube version: v1.25.2
+          kubernetes version: ${{ matrix.kubernetes }}
+          github token: ${{ secrets.GITHUB_TOKEN }}
+          container runtime: ${{ matrix.container_runtime }}
+      - name: Validate Minikube
+        run: minikube status | grep Running
+      - name: Validate Cluster
+        run: kubectl get nodes
+      - name: Validate default driver
+        run: 'cat $MINIKUBE_HOME/.minikube/machines/minikube/config.json | jq ".DriverName" | grep none'
   legacy:
     name: Run for legacy/old versions
     runs-on: ubuntu-18.04

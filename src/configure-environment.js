@@ -30,6 +30,7 @@ const configureEnvironment = async (inputs = {}) => {
     await waitForDocker();
   }
   await download.installCriCtl(inputs);
+  await download.installCriDockerd(inputs);
 };
 
 module.exports = configureEnvironment;
