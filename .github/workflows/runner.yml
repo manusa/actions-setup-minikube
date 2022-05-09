@@ -41,8 +41,8 @@ jobs:
       - name: Test Action
         uses: ./
         with:
-          minikube version: v1.16.0
-          kubernetes version: v1.19.2
+          minikube version: v1.25.2
+          kubernetes version: v1.24.0
           github token: ${{ secrets.GITHUB_TOKEN }}
           driver: docker
       - name: Validate Minikube
@@ -64,8 +64,8 @@ jobs:
       - name: Test Action
         uses: ./
         with:
-          minikube version: v1.24.0
-          kubernetes version: v1.23.0
+          minikube version: v1.25.2
+          kubernetes version: v1.24.0
           github token: ${{ secrets.GITHUB_TOKEN }}
           start args: '--addons=registry --addons=metrics-server'
       - name: Validate Minikube
@@ -86,7 +86,7 @@ jobs:
         uses: ./
         with:
           minikube version: v1.25.2
-          kubernetes version: v1.23.0
+          kubernetes version: v1.24.0
           github token: ${{ secrets.GITHUB_TOKEN }}
           start args: '--addons=ingress'
       - name: Validate Minikube
