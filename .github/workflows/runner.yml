@@ -9,10 +9,10 @@ on:
 jobs:
   default-inputs:
     name: Run with defaults
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     strategy:
       matrix:
-        kubernetes: [v1.24.1,v1.23.0,v1.20.0,v1.19.2,v1.18.9,v1.17.5]
+        kubernetes: [v1.24.3,v1.23.9,v1.22.12]
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -21,7 +21,7 @@ jobs:
       - name: Test Action
         uses: ./
         with:
-          minikube version: v1.26.0
+          minikube version: v1.26.1
           kubernetes version: ${{ matrix.kubernetes }}
           github token: ${{ secrets.GITHUB_TOKEN }}
       - name: Validate Minikube
@@ -41,8 +41,8 @@ jobs:
       - name: Test Action
         uses: ./
         with:
-          minikube version: v1.26.0
-          kubernetes version: v1.24.1
+          minikube version: v1.26.1
+          kubernetes version: v1.24.3
           github token: ${{ secrets.GITHUB_TOKEN }}
           driver: docker
       - name: Validate Minikube
@@ -64,8 +64,8 @@ jobs:
       - name: Test Action
         uses: ./
         with:
-          minikube version: v1.26.0
-          kubernetes version: v1.24.1
+          minikube version: v1.26.1
+          kubernetes version: v1.24.3
           github token: ${{ secrets.GITHUB_TOKEN }}
           start args: '--addons=registry --addons=metrics-server'
       - name: Validate Minikube
@@ -85,8 +85,8 @@ jobs:
       - name: Test Action
         uses: ./
         with:
-          minikube version: v1.26.0
-          kubernetes version: v1.24.1
+          minikube version: v1.26.1
+          kubernetes version: v1.24.3
           github token: ${{ secrets.GITHUB_TOKEN }}
           start args: '--addons=ingress'
       - name: Validate Minikube
@@ -121,8 +121,31 @@ jobs:
         run: kubectl get nodes
       - name: Validate container runtime (${{ matrix.container_runtime }})
         run: 'cat $MINIKUBE_HOME/.minikube/machines/minikube/config.json | jq ".Driver.NodeConfig.ContainerRuntime" | grep "${{ matrix.container_runtime }}"'
-  legacy:
-    name: Run for legacy/old versions
+  unsupported:
+    name: Run with unsupported K8s versions
+    runs-on: ubuntu-20.04
+    strategy:
+      matrix:
+        kubernetes: [v1.20.15,v1.19.16,v1.18.20,v1.17.17]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Setup Node
+        uses: actions/setup-node@master
+      - name: Test Action
+        uses: ./
+        with:
+          minikube version: v1.26.0
+          kubernetes version: ${{ matrix.kubernetes }}
+          github token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Validate Minikube
+        run: minikube status | grep Running
+      - name: Validate Cluster
+        run: kubectl get nodes
+      - name: Validate default driver
+        run: 'cat $MINIKUBE_HOME/.minikube/machines/minikube/config.json | jq ".DriverName" | grep none'
+  legacy-18:
+    name: Run for legacy/old versions (Ubuntu 18, Minikube 1.16, K8s 1.12)
     runs-on: ubuntu-18.04
     steps:
       - name: Checkout
