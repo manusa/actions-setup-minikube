@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-20.04
     strategy:
       matrix:
-        kubernetes: [v1.24.0,v1.23.0,v1.20.0,v1.19.2,v1.18.9,v1.17.5]
+        kubernetes: [v1.24.1,v1.23.0,v1.20.0,v1.19.2,v1.18.9,v1.17.5]
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -21,7 +21,7 @@ jobs:
       - name: Test Action
         uses: ./
         with:
-          minikube version: v1.25.2
+          minikube version: v1.26.0
           kubernetes version: ${{ matrix.kubernetes }}
           github token: ${{ secrets.GITHUB_TOKEN }}
       - name: Validate Minikube
@@ -41,8 +41,8 @@ jobs:
       - name: Test Action
         uses: ./
         with:
-          minikube version: v1.25.2
-          kubernetes version: v1.24.0
+          minikube version: v1.26.0
+          kubernetes version: v1.24.1
           github token: ${{ secrets.GITHUB_TOKEN }}
           driver: docker
       - name: Validate Minikube
@@ -64,8 +64,8 @@ jobs:
       - name: Test Action
         uses: ./
         with:
-          minikube version: v1.25.2
-          kubernetes version: v1.24.0
+          minikube version: v1.26.0
+          kubernetes version: v1.24.1
           github token: ${{ secrets.GITHUB_TOKEN }}
           start args: '--addons=registry --addons=metrics-server'
       - name: Validate Minikube
@@ -85,8 +85,8 @@ jobs:
       - name: Test Action
         uses: ./
         with:
-          minikube version: v1.25.2
-          kubernetes version: v1.24.0
+          minikube version: v1.26.0
+          kubernetes version: v1.24.1
           github token: ${{ secrets.GITHUB_TOKEN }}
           start args: '--addons=ingress'
       - name: Validate Minikube
@@ -96,11 +96,11 @@ jobs:
       - name: Validate enabled addon in arg
         run: minikube addons list -o json | jq '.ingress.Status' | grep enabled
   container-runtime:
-    name: Run with container runtime config
+    name: Run with container runtime config in docker driver (Required by containerd)
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        kubernetes: [v1.24.0,v1.17.5]
+        kubernetes: [v1.24.1,v1.17.5]
         container_runtime: ['containerd']
     steps:
       - name: Checkout
@@ -110,16 +110,17 @@ jobs:
       - name: Test Action
         uses: ./
         with:
-          minikube version: v1.25.2
+          minikube version: v1.26.0
           kubernetes version: ${{ matrix.kubernetes }}
           github token: ${{ secrets.GITHUB_TOKEN }}
           container runtime: ${{ matrix.container_runtime }}
+          driver: docker
       - name: Validate Minikube
         run: minikube status | grep Running
       - name: Validate Cluster
         run: kubectl get nodes
-      - name: Validate default driver
-        run: 'cat $MINIKUBE_HOME/.minikube/machines/minikube/config.json | jq ".DriverName" | grep none'
+      - name: Validate container runtime (${{ matrix.container_runtime }})
+        run: 'cat $MINIKUBE_HOME/.minikube/machines/minikube/config.json | jq ".Driver.NodeConfig.ContainerRuntime" | grep "${{ matrix.container_runtime }}"'
   legacy:
     name: Run for legacy/old versions
     runs-on: ubuntu-18.04
