@@ -8,7 +8,7 @@ Set up your GitHub Actions workflow with a specific version of
 [Minikube](https://github.com/kubernetes/minikube)
 and [Kubernetes](https://github.com/kubernetes/kubernetes).
 
-_Currently only Linux Ubuntu 18.04 or 20.04
+_Currently only Linux Ubuntu 18.04, 20.04, or 22.04
 [CI environment](https://help.github.com/en/github/automating-your-workflow-with-github-actions/virtual-environments-for-github-actions)
 is supported._
 
@@ -27,12 +27,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Setup Minikube
-        uses: manusa/actions-setup-minikube@v2.6.1
+        uses: manusa/actions-setup-minikube@v2.7.0
         with:
-          minikube version: 'v1.26.0'
-          kubernetes version: 'v1.24.1'
+          minikube version: 'v1.26.1'
+          kubernetes version: 'v1.24.3'
           github token: ${{ secrets.GITHUB_TOKEN }}
       - name: Interact with the cluster
         run: kubectl get nodes
