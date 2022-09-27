@@ -14,6 +14,7 @@ const run = async () => {
   await configureEnvironment(inputs);
   const downloadedFile = await download.downloadMinikube(inputs);
   await install(downloadedFile, inputs);
+  await waitForNodeAvaliability();
 };
 
 process.on('unhandledRejection', errorHandler);

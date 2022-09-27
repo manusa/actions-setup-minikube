@@ -40,4 +40,11 @@ const install = async (minikube, inputs) => {
   core.info(`${minikubeVersion} installed successfully`);
 };
 
-module.exports = install;
+const waitForNodeAvaliability = async () => {
+  const nodeCheck = execSync(`kubectl wait --for=condition=Ready nodes --all --timeout=600s`)
+    .toString()
+    .replace('condition met', 'avaliable');
+  core.info(nodeCheck);
+}
+
+module.exports = { install, waitForNodeAvaliability };
