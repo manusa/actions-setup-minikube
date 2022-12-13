@@ -78,7 +78,7 @@ const installCriDockerd = async (inputs = {}) => {
   // const tagInfo = await getTagInfo({inputs, releaseUrl});
   // const tag = tagInfo.data.name;
   // const releaseUrl = 'https://api.github.com/repos/Mirantis/cri-dockerd/releases/latest';
-  const tag = 'v0.2.3';
+  const tag = 'v0.3.4';
   const releaseUrl = `https://api.github.com/repos/Mirantis/cri-dockerd/releases/tags/${tag}`;
   const binaryTar = await downloadGitHubArtifact({
     inputs,

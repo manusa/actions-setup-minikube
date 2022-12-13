@@ -172,11 +172,11 @@ describe('download module test suite', () => {
         data: {
           assets: [
             {
-              name: 'cri-dockerd-0.2.3-3.el7.src.rpm',
+              name: 'cri-dockerd-0.3.4-3.el7.src.rpm',
               browser_download_url: 'http://invalid'
             },
             {
-              name: 'cri-dockerd-0.2.3-3.el7.src.rpm',
+              name: 'cri-dockerd-0.3.4-3.el7.src.rpm',
               browser_download_url: 'http://invalid'
             },
             {
@@ -184,11 +184,11 @@ describe('download module test suite', () => {
               browser_download_url: 'http://invalid'
             },
             {
-              name: 'cri-dockerd-0.2.3.arm64.tgz',
+              name: 'cri-dockerd-0.3.4.arm64.tgz',
               browser_download_url: 'http://invalid'
             },
             {
-              name: 'cri-dockerd-0.2.3.amd64.tgz',
+              name: 'cri-dockerd-0.3.4.amd64.tgz',
               browser_download_url: 'http://valid'
             },
             {
@@ -211,7 +211,7 @@ describe('download module test suite', () => {
       // Then
       expect(axios).toHaveBeenCalledWith(
         expect.objectContaining({
-          url: 'https://api.github.com/repos/Mirantis/cri-dockerd/releases/tags/v0.2.3',
+          url: 'https://api.github.com/repos/Mirantis/cri-dockerd/releases/tags/v0.3.4',
           headers: {Authorization: 'token secret-token'}
         })
       );
