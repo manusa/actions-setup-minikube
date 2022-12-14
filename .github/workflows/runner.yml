@@ -1,4 +1,4 @@
-name: Run action and validate environment
+name: Run action (E2E tests)
 
 on:
   push:
@@ -8,7 +8,7 @@ on:
 
 jobs:
   default-inputs:
-    name: Run with defaults
+    name: Defaults
     runs-on: ubuntu-22.04
     strategy:
       matrix:
@@ -31,7 +31,7 @@ jobs:
       - name: Validate default driver
         run: 'cat $MINIKUBE_HOME/.minikube/machines/minikube/config.json | jq ".DriverName" | grep none'
   docker-driver:
-    name: Run with Docker driver
+    name: Docker driver
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -54,7 +54,7 @@ jobs:
       - name: Validate ssh access
         run: minikube ssh --native-ssh=false "cat /etc/os-release"
   extra-args:
-    name: Run with extra arguments
+    name: Extra arguments
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -75,7 +75,7 @@ jobs:
       - name: Validate enabled addon in arg
         run: minikube addons list -o json | jq '.registry.Status' | grep enabled
   ingress:
-    name: Run with ingress enabled
+    name: Ingress enabled
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -96,7 +96,7 @@ jobs:
       - name: Validate enabled addon in arg
         run: minikube addons list -o json | jq '.ingress.Status' | grep enabled
   container-runtime:
-    name: Run with container runtime config in docker driver (Required by containerd)
+    name: Container runtime config in docker driver (Required by containerd)
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -122,7 +122,7 @@ jobs:
       - name: Validate container runtime (${{ matrix.container_runtime }})
         run: 'cat $MINIKUBE_HOME/.minikube/machines/minikube/config.json | jq ".Driver.NodeConfig.ContainerRuntime" | grep "${{ matrix.container_runtime }}"'
   unsupported:
-    name: Run with unsupported K8s versions
+    name: Unsupported K8s versions
     runs-on: ubuntu-20.04
     strategy:
       matrix:
@@ -145,7 +145,7 @@ jobs:
       - name: Validate default driver
         run: 'cat $MINIKUBE_HOME/.minikube/machines/minikube/config.json | jq ".DriverName" | grep none'
   legacy-18:
-    name: Run for legacy/old versions (Ubuntu 18, Minikube 1.16, K8s 1.12)
+    name: Legacy/old versions (Ubuntu 18, Minikube 1.16, K8s 1.12)
     runs-on: ubuntu-18.04
     steps:
       - name: Checkout
