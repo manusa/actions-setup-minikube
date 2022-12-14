@@ -100,7 +100,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        kubernetes: [v1.24.3,v1.17.5]
+        kubernetes: [v1.25.4,1.24.8,v1.19.16]
         container_runtime: ['containerd']
     steps:
       - name: Checkout
