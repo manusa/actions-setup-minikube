@@ -31,8 +31,8 @@ jobs:
       - name: Setup Minikube
         uses: manusa/actions-setup-minikube@v2.7.1
         with:
-          minikube version: 'v1.26.1'
-          kubernetes version: 'v1.25.0'
+          minikube version: 'v1.28.0'
+          kubernetes version: 'v1.25.4'
           github token: ${{ secrets.GITHUB_TOKEN }}
       - name: Interact with the cluster
         run: kubectl get nodes
