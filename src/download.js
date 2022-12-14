@@ -45,9 +45,10 @@ const downloadMinikube = async (inputs = {}) => {
 
 const installCriCtl = async (inputs = {}) => {
   core.info(`Downloading cri-ctl`);
+  const tag = 'v1.25.0';
   const tar = await downloadGitHubArtifact({
     inputs,
-    releaseUrl: 'https://api.github.com/repos/kubernetes-sigs/cri-tools/releases/latest',
+    releaseUrl: `https://api.github.com/repos/kubernetes-sigs/cri-tools/releases/tags/${tag}`,
     assetPredicate: asset =>
       isLinux(asset.name) && isAmd64(asset.name) && !isSignature(asset.name) && asset.name.indexOf('crictl') === 0
   });
@@ -78,7 +79,6 @@ const installCriDockerd = async (inputs = {}) => {
   const sourceDir = await tc.extractTar(sourceTar);
   const sourceContent = firstDir(sourceDir);
   logExecSync(`sed -i 's/cri-dockerd --/cri-dockerd --network-plugin=cni --/g' ${sourceDir}/${sourceContent}/packaging/systemd/cri-docker.service`);
-  logExecSync(`cat ${sourceDir}/${sourceContent}/packaging/systemd/cri-docker.service`);
   logExecSync(`sudo cp -a ${sourceDir}/${sourceContent}/packaging/systemd/* /etc/systemd/system`);
   const serviceFile = '/etc/systemd/system/cri-docker.service';
   fs.writeFileSync(serviceFile, fs.readFileSync(serviceFile).toString()

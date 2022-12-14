@@ -96,7 +96,7 @@ describe('download module test suite', () => {
       // Then
       expect(axios).toHaveBeenCalledWith(
         expect.objectContaining({
-          url: 'https://api.github.com/repos/kubernetes-sigs/cri-tools/releases/latest',
+          url: 'https://api.github.com/repos/kubernetes-sigs/cri-tools/releases/tags/v1.25.0',
           headers: {Authorization: 'token secret-token'}
         })
       );
