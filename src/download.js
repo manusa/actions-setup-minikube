@@ -9,6 +9,11 @@ const {logExecSync} = require('./exec');
 const isLinux = name => name.indexOf('linux') >= 0;
 const isAmd64 = name => name.indexOf('amd64') >= 0;
 const isSignature = name => name.indexOf('sha256') >= 0;
+const isWindows = name => name.indexOf('.win.') >= 0;
+const isMac = name => name.indexOf('.darwin.') >= 0;
+const isTgz = name => name.endsWith('.tgz');
+const firstDir = dir => fs.readdirSync(dir, {withFileTypes: true}).filter(f => f.isDirectory()).map(f => f.name)[0];
+
 
 const getTagInfo = async ({inputs, releaseUrl}) => {
   const headers = {};
@@ -55,18 +60,25 @@ const installCriDockerd = async (inputs = {}) => {
   // const tagInfo = await getTagInfo({inputs, releaseUrl});
   // const tag = tagInfo.data.name;
   // const releaseUrl = 'https://api.github.com/repos/Mirantis/cri-dockerd/releases/latest';
-  const tag = 'v0.2.0';
+  const tag = 'v0.2.3';
   const releaseUrl = `https://api.github.com/repos/Mirantis/cri-dockerd/releases/tags/${tag}`;
   const binaryTar = await downloadGitHubArtifact({
     inputs,
     releaseUrl,
     assetPredicate: asset =>
-      isLinux(asset.name) && isAmd64(asset.name) && !isSignature(asset.name) && asset.name.indexOf('cri-dockerd') === 0
+      !isSignature(asset.name) && !isWindows(asset.name) && !isMac(asset.name) && isAmd64(asset.name) && isTgz(asset.name) && asset.name.indexOf('cri-dockerd') === 0
   });
-  await tc.extractTar(binaryTar, '/usr/local/bin');
+  // Binary
+  const binaryDir = await tc.extractTar(binaryTar);
+  const binaryContent = firstDir(binaryDir);
+  logExecSync(`sudo cp -a ${binaryDir}/${binaryContent}/cri-dockerd /usr/local/bin/`);
+  logExecSync(`sudo ln -s /usr/local/bin/cri-dockerd /usr/bin/cri-dockerd`);
+  // Service file
   const sourceTar = await tc.downloadTool(`https://github.com/Mirantis/cri-dockerd/archive/refs/tags/${tag}.tar.gz`);
   const sourceDir = await tc.extractTar(sourceTar);
-  const sourceContent = fs.readdirSync(sourceDir, {withFileTypes: true}).filter(f => f.isDirectory()).map(f => f.name)[0];
+  const sourceContent = firstDir(sourceDir);
+  logExecSync(`sed -i 's/cri-dockerd --/cri-dockerd --network-plugin=cni --/g' ${sourceDir}/${sourceContent}/packaging/systemd/cri-docker.service`);
+  logExecSync(`cat ${sourceDir}/${sourceContent}/packaging/systemd/cri-docker.service`);
   logExecSync(`sudo cp -a ${sourceDir}/${sourceContent}/packaging/systemd/* /etc/systemd/system`);
   const serviceFile = '/etc/systemd/system/cri-docker.service';
   fs.writeFileSync(serviceFile, fs.readFileSync(serviceFile).toString()
