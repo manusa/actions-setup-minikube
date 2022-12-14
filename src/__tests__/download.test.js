@@ -108,7 +108,7 @@ describe('download module test suite', () => {
     });
   });
 
-  describe('installCriDockerd', () => {
+  describe('installCriDockerd with token', () => {
     let fs;
     let exec;
     beforeEach(() => {
@@ -118,11 +118,23 @@ describe('download module test suite', () => {
         data: {
           assets: [
             {
+              name: 'cri-dockerd-0.2.3-3.el7.src.rpm',
+              browser_download_url: 'http://invalid'
+            },
+            {
+              name: 'cri-dockerd-0.2.3-3.el7.src.rpm',
+              browser_download_url: 'http://invalid'
+            },
+            {
               name: 'cri-dockerd-v0.2.0-darwin-arm64.tar.gz',
               browser_download_url: 'http://invalid'
             },
             {
-              name: 'cri-dockerd-v0.2.0-linux-amd64.tar.gz',
+              name: 'cri-dockerd-0.2.3.arm64.tgz',
+              browser_download_url: 'http://invalid'
+            },
+            {
+              name: 'cri-dockerd-0.2.3.amd64.tgz',
               browser_download_url: 'http://valid'
             },
             {
@@ -132,30 +144,48 @@ describe('download module test suite', () => {
           ]
         }
       }));
+      tc.downloadTool.mockImplementationOnce(async () => 'cri-dockerd.tgz');
       fs.readdirSync = jest.fn(() => [
         {isDirectory: () => true, name: 'cri-dockerd'}
       ]);
       fs.readFileSync = jest.fn(() => '');
       fs.writeFileSync = jest.fn();
     });
-    test('with token, should download and install valid Linux version', async () => {
-      // Given
-      tc.downloadTool.mockImplementationOnce(async () => 'cri-dockerd.tar.gz');
+    test('should download Linux version', async () => {
       // When
       await download.installCriDockerd({githubToken: 'secret-token'});
       // Then
       expect(axios).toHaveBeenCalledWith(
         expect.objectContaining({
-          url: 'https://api.github.com/repos/Mirantis/cri-dockerd/releases/tags/v0.2.0',
+          url: 'https://api.github.com/repos/Mirantis/cri-dockerd/releases/tags/v0.2.3',
           headers: {Authorization: 'token secret-token'}
         })
       );
       expect(tc.downloadTool).toHaveBeenCalledWith('http://valid');
-      expect(tc.extractTar).toHaveBeenCalledWith(
-        'cri-dockerd.tar.gz',
-        '/usr/local/bin'
+    });
+    test('should install cri-dockerd binary', async () => {
+      // When
+      await download.installCriDockerd({githubToken: 'secret-token'});
+      // Then
+      expect(tc.extractTar).toHaveBeenCalledWith('cri-dockerd.tgz');
+      expect(exec.logExecSync).toHaveBeenCalledWith(
+        expect.stringMatching(
+          /sudo cp -a .+\/cri-dockerd\/cri-dockerd \/usr\/local\/bin\//
+        )
       );
-      expect(exec.logExecSync).toHaveBeenCalledTimes(4);
+      expect(exec.logExecSync).toHaveBeenCalledWith(
+        'sudo ln -s /usr/local/bin/cri-dockerd /usr/bin/cri-dockerd'
+      );
+    });
+    test('should install cri-dockerd service', async () => {
+      // When
+      await download.installCriDockerd({githubToken: 'secret-token'});
+      // Then
+      expect(exec.logExecSync).toHaveBeenCalledWith(
+        expect.stringMatching(
+          /sed -i 's\/cri-dockerd --\/cri-dockerd --network-plugin=cni --\/g'/
+        )
+      );
       expect(exec.logExecSync).toHaveBeenCalledWith(
         expect.stringMatching(
           /sudo cp -a .+\/packaging\/systemd\/\* \/etc\/systemd\/system/
