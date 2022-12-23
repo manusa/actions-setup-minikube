@@ -165,12 +165,12 @@ describe('download module test suite', () => {
     });
     test('should install cri-dockerd binary', async () => {
       // When
-      await download.installCriDockerd({githubToken: 'secret-token'});
+      await download.installCriDockerd();
       // Then
       expect(tc.extractTar).toHaveBeenCalledWith('cri-dockerd.tgz');
       expect(exec.logExecSync).toHaveBeenCalledWith(
         expect.stringMatching(
-          /sudo cp -a .+\/cri-dockerd\/cri-dockerd \/usr\/local\/bin\//
+          /sudo install -m 0755 .+\/cri-dockerd\/cri-dockerd \/usr\/local\/bin\//
         )
       );
       expect(exec.logExecSync).toHaveBeenCalledWith(

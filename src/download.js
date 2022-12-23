@@ -72,7 +72,7 @@ const installCriDockerd = async (inputs = {}) => {
   // Binary
   const binaryDir = await tc.extractTar(binaryTar);
   const binaryContent = firstDir(binaryDir);
-  logExecSync(`sudo cp -a ${binaryDir}/${binaryContent}/cri-dockerd /usr/local/bin/`);
+  logExecSync(`sudo install -m 0755 ${binaryDir}/${binaryContent}/cri-dockerd /usr/local/bin/`);
   logExecSync(`sudo ln -sf /usr/local/bin/cri-dockerd /usr/bin/cri-dockerd`);
   // Service file
   const sourceTar = await tc.downloadTool(`https://github.com/Mirantis/cri-dockerd/archive/refs/tags/${tag}.tar.gz`);
