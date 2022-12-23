@@ -83,6 +83,10 @@ const installCriDockerd = async (inputs = {}) => {
   fs.writeFileSync(serviceFile, fs.readFileSync(serviceFile).toString()
     .replace(/cri-dockerd --/g, 'cri-dockerd --network-plugin=cni --')
   );
+  // There's a soft link and shouldn't be needed
+  fs.writeFileSync(serviceFile, fs.readFileSync(serviceFile).toString()
+    .replace(/\/usr\/bin\/cri-dockerd/g, '/usr/local/bin/cri-dockerd')
+  );
   const socketFile = '/etc/systemd/system/cri-docker.socket';
   fs.writeFileSync(socketFile, fs.readFileSync(socketFile).toString()
     .replace(/cri-docker.sock/g, 'cri-dockerd.sock')

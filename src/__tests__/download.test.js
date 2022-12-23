@@ -177,33 +177,59 @@ describe('download module test suite', () => {
         'sudo ln -sf /usr/local/bin/cri-dockerd /usr/bin/cri-dockerd'
       );
     });
-    test('should install cri-dockerd service', async () => {
-      // Given
-      fs.readFileSync.mockImplementation(
-        () =>
-          'ExecStart=/usr/bin/cri-dockerd --container-runtime-endpoint fd://'
-      );
-      // When
-      await download.installCriDockerd({githubToken: 'secret-token'});
-      // Then
-      expect(fs.writeFileSync).toHaveBeenCalledWith(
-        '/etc/systemd/system/cri-docker.service',
-        'ExecStart=/usr/bin/cri-dockerd --network-plugin=cni --container-runtime-endpoint fd://'
-      );
-      expect(exec.logExecSync).toHaveBeenCalledWith(
-        expect.stringMatching(
-          /sudo cp -a .+\/packaging\/systemd\/\* \/etc\/systemd\/system/
-        )
-      );
-      expect(exec.logExecSync).toHaveBeenCalledWith(
-        'sudo systemctl daemon-reload'
-      );
-      expect(exec.logExecSync).toHaveBeenCalledWith(
-        'sudo systemctl enable cri-docker.service'
-      );
-      expect(exec.logExecSync).toHaveBeenCalledWith(
-        'sudo systemctl enable --now cri-docker.socket'
-      );
+    describe('should install cri-dockerd service', () => {
+      test('should copy systemd service files', async () => {
+        // When
+        await download.installCriDockerd();
+        // Then
+        expect(exec.logExecSync).toHaveBeenCalledWith(
+          expect.stringMatching(
+            /sudo cp -a .+\/packaging\/systemd\/\* \/etc\/systemd\/system/
+          )
+        );
+      });
+      test('should add --network-plugin=cni to systemd service file', async () => {
+        // Given
+        fs.readFileSync.mockImplementation(
+          () =>
+            'ExecStart=/usr/bin/cri-dockerd --container-runtime-endpoint fd://'
+        );
+        // When
+        await download.installCriDockerd();
+        // Then
+        expect(fs.writeFileSync).toHaveBeenCalledWith(
+          '/etc/systemd/system/cri-docker.service',
+          'ExecStart=/usr/bin/cri-dockerd --network-plugin=cni --container-runtime-endpoint fd://'
+        );
+      });
+      test('should replace binary location in systemd service file', async () => {
+        // Given
+        fs.readFileSync.mockImplementation(
+          () =>
+            'ExecStart=/usr/bin/cri-dockerd --container-runtime-endpoint fd://'
+        );
+        // When
+        await download.installCriDockerd();
+        // Then
+        expect(fs.writeFileSync).toHaveBeenCalledWith(
+          '/etc/systemd/system/cri-docker.service',
+          'ExecStart=/usr/local/bin/cri-dockerd --container-runtime-endpoint fd://'
+        );
+      });
+      test('should enable and start service', async () => {
+        // When
+        await download.installCriDockerd();
+        // Then
+        expect(exec.logExecSync).toHaveBeenCalledWith(
+          'sudo systemctl daemon-reload'
+        );
+        expect(exec.logExecSync).toHaveBeenCalledWith(
+          'sudo systemctl enable cri-docker.service'
+        );
+        expect(exec.logExecSync).toHaveBeenCalledWith(
+          'sudo systemctl enable --now cri-docker.socket'
+        );
+      });
     });
   });
 });
