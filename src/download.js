@@ -62,7 +62,7 @@ const installCniPlugins = async (inputs = {}) => {
 
 const installCriCtl = async (inputs = {}) => {
   core.info(`Downloading cri-ctl`);
-  const tag = 'v1.25.0';
+  const tag = 'v1.26.1';
   const tar = await downloadGitHubArtifact({
     inputs,
     releaseUrl: `https://api.github.com/repos/kubernetes-sigs/cri-tools/releases/tags/${tag}`,
