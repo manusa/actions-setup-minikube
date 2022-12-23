@@ -73,16 +73,15 @@ const installCriDockerd = async (inputs = {}) => {
   const binaryDir = await tc.extractTar(binaryTar);
   const binaryContent = firstDir(binaryDir);
   logExecSync(`sudo cp -a ${binaryDir}/${binaryContent}/cri-dockerd /usr/local/bin/`);
-  logExecSync(`sudo ln -s /usr/local/bin/cri-dockerd /usr/bin/cri-dockerd`);
+  logExecSync(`sudo ln -sf /usr/local/bin/cri-dockerd /usr/bin/cri-dockerd`);
   // Service file
   const sourceTar = await tc.downloadTool(`https://github.com/Mirantis/cri-dockerd/archive/refs/tags/${tag}.tar.gz`);
   const sourceDir = await tc.extractTar(sourceTar);
   const sourceContent = firstDir(sourceDir);
-  logExecSync(`sed -i 's/cri-dockerd --/cri-dockerd --network-plugin=cni --/g' ${sourceDir}/${sourceContent}/packaging/systemd/cri-docker.service`);
   logExecSync(`sudo cp -a ${sourceDir}/${sourceContent}/packaging/systemd/* /etc/systemd/system`);
   const serviceFile = '/etc/systemd/system/cri-docker.service';
   fs.writeFileSync(serviceFile, fs.readFileSync(serviceFile).toString()
-    .replace(/\/usr\/bin\/cri-dockerd/g, '/usr/local/bin/cri-dockerd')
+    .replace(/cri-dockerd --/g, 'cri-dockerd --network-plugin=cni --')
   );
   const socketFile = '/etc/systemd/system/cri-docker.socket';
   fs.writeFileSync(socketFile, fs.readFileSync(socketFile).toString()

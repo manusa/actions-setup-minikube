@@ -174,17 +174,21 @@ describe('download module test suite', () => {
         )
       );
       expect(exec.logExecSync).toHaveBeenCalledWith(
-        'sudo ln -s /usr/local/bin/cri-dockerd /usr/bin/cri-dockerd'
+        'sudo ln -sf /usr/local/bin/cri-dockerd /usr/bin/cri-dockerd'
       );
     });
     test('should install cri-dockerd service', async () => {
+      // Given
+      fs.readFileSync.mockImplementation(
+        () =>
+          'ExecStart=/usr/bin/cri-dockerd --container-runtime-endpoint fd://'
+      );
       // When
       await download.installCriDockerd({githubToken: 'secret-token'});
       // Then
-      expect(exec.logExecSync).toHaveBeenCalledWith(
-        expect.stringMatching(
-          /sed -i 's\/cri-dockerd --\/cri-dockerd --network-plugin=cni --\/g'/
-        )
+      expect(fs.writeFileSync).toHaveBeenCalledWith(
+        '/etc/systemd/system/cri-docker.service',
+        'ExecStart=/usr/bin/cri-dockerd --network-plugin=cni --container-runtime-endpoint fd://'
       );
       expect(exec.logExecSync).toHaveBeenCalledWith(
         expect.stringMatching(
