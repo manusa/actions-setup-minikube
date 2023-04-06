@@ -144,9 +144,9 @@ jobs:
         run: kubectl get nodes
       - name: Validate default driver
         run: 'cat $MINIKUBE_HOME/.minikube/machines/minikube/config.json | jq ".DriverName" | grep none'
-  legacy-18:
-    name: Legacy/old versions (Ubuntu 18, Minikube 1.16, K8s 1.12)
-    runs-on: ubuntu-18.04
+  legacy-20:
+    name: Legacy/old versions (Ubuntu 20, Minikube 1.18, K8s 1.14)
+    runs-on: ubuntu-20.04
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -155,8 +155,8 @@ jobs:
       - name: Test Action
         uses: ./
         with:
-          minikube version: v1.16.0
-          kubernetes version: v1.12.10
+          minikube version: v1.18.0
+          kubernetes version: v1.14.10
           github token: ${{ secrets.GITHUB_TOKEN }}
           start args: '--force'
       - name: Validate Minikube
