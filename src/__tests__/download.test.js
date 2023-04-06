@@ -67,8 +67,10 @@ describe('download module test suite', () => {
     });
   });
 
-  describe('installCniPlugins', () => {
+  describe('installCniPlugins with token', () => {
+    let exec;
     beforeEach(() => {
+      exec = require('../exec');
       axios.mockImplementationOnce(async () => ({
         data: {
           assets: [
@@ -91,10 +93,9 @@ describe('download module test suite', () => {
           ]
         }
       }));
-    });
-    test('with token, should download valid Linux version', async () => {
-      // Given
       tc.downloadTool.mockImplementationOnce(async () => 'file.tar.gz');
+    });
+    test('should download valid Linux version', async () => {
       // When
       await download.installCniPlugins({githubToken: 'secret-token'});
       // Then
@@ -105,7 +106,17 @@ describe('download module test suite', () => {
         })
       );
       expect(tc.downloadTool).toHaveBeenCalledWith('http://valid');
-      expect(tc.extractTar).toHaveBeenCalledWith('file.tar.gz', '/opt/cni/bin');
+    });
+    test('should install binaries', async () => {
+      // When
+      await download.installCniPlugins();
+      // Then
+      expect(tc.extractTar).toHaveBeenCalledWith('file.tar.gz');
+      expect(exec.logExecSync).toHaveBeenCalledWith(
+        expect.stringMatching(
+          /sudo find .+ -type f -exec install -Dm 0755 .+\/opt\/cni\/bin.+/
+        )
+      );
     });
   });
 

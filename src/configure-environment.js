@@ -29,6 +29,7 @@ const configureEnvironment = async (inputs = {}) => {
     core.info('Waiting for Docker to be ready');
     await waitForDocker();
   }
+  await download.installCniPlugins(inputs);
   await download.installCriCtl(inputs);
   await download.installCriDockerd(inputs);
 };
