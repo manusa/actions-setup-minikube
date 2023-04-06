@@ -8,7 +8,7 @@ const {logExecSync} = require('./exec');
 
 const isLinux = name => name.indexOf('linux') >= 0;
 const isAmd64 = name => name.indexOf('amd64') >= 0;
-const isSignature = name => name.indexOf('sha256') >= 0;
+const isSignature = name => name.indexOf('sha1') >= 0 || name.indexOf('sha256') >= 0 || name.indexOf('sha512') >= 0;
 const isWindows = name => name.indexOf('.win.') >= 0;
 const isMac = name => name.indexOf('.darwin.') >= 0;
 const isTgz = name => name.endsWith('.tgz');
@@ -41,6 +41,23 @@ const downloadMinikube = async (inputs = {}) => {
     releaseUrl: `https://api.github.com/repos/kubernetes/minikube/releases/tags/${inputs.minikubeVersion}`,
     assetPredicate: asset => isLinux(asset.name) && isAmd64(asset.name) && !isSignature(asset.name)
   });
+};
+
+// Required by cri-dockerd and recent Minikube releases
+// https://github.com/Mirantis/cri-dockerd/commit/e2666520e25cb302b9b1d231a63699c2338b8567
+// https://github.com/kubernetes/minikube/commit/fd549f396dbd39385baefe88dcead0ccf99f1bff
+const installCniPlugins = async (inputs = {}) => {
+  core.info(`Downloading CNI plugins`);
+  const tag = 'v1.2.0';
+  const tar = await downloadGitHubArtifact({
+    inputs,
+    releaseUrl: `https://api.github.com/repos/containernetworking/plugins/releases/tags/${tag}`,
+    assetPredicate: asset =>
+      isLinux(asset.name) && isAmd64(asset.name) && !isSignature(asset.name) && asset.name.indexOf('cni-plugins') === 0
+  });
+  const cniBinDirPath = '/opt/cni/bin';
+  logExecSync(`sudo mkdir -p ${cniBinDirPath}`);
+  await tc.extractTar(tar, cniBinDirPath);
 };
 
 const installCriCtl = async (inputs = {}) => {
@@ -96,4 +113,4 @@ const installCriDockerd = async (inputs = {}) => {
   logExecSync('sudo systemctl enable --now cri-docker.socket');
 };
 
-module.exports = {downloadMinikube, installCriCtl, installCriDockerd};
+module.exports = {downloadMinikube, installCniPlugins, installCriCtl, installCriDockerd};
