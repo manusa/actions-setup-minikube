@@ -67,6 +67,48 @@ describe('download module test suite', () => {
     });
   });
 
+  describe('installCniPlugins', () => {
+    beforeEach(() => {
+      axios.mockImplementationOnce(async () => ({
+        data: {
+          assets: [
+            {
+              name: 'cni-plugins-linux-amd64-v1.2.0.tgz.sha1',
+              browser_download_url: 'http://invalid'
+            },
+            {
+              name: 'cni-plugins-linux-amd64-v1.2.0.tgz',
+              browser_download_url: 'http://valid'
+            },
+            {
+              name: 'cni-plugins-linux-amd64-v1.2.0.tgz.sha512',
+              browser_download_url: 'http://invalid'
+            },
+            {
+              name: 'cni-plugins-windows-amd64-v1.2.0.tgz',
+              browser_download_url: 'http://invalid'
+            }
+          ]
+        }
+      }));
+    });
+    test('with token, should download valid Linux version', async () => {
+      // Given
+      tc.downloadTool.mockImplementationOnce(async () => 'file.tar.gz');
+      // When
+      await download.installCniPlugins({githubToken: 'secret-token'});
+      // Then
+      expect(axios).toHaveBeenCalledWith(
+        expect.objectContaining({
+          url: 'https://api.github.com/repos/containernetworking/plugins/releases/tags/v1.2.0',
+          headers: {Authorization: 'token secret-token'}
+        })
+      );
+      expect(tc.downloadTool).toHaveBeenCalledWith('http://valid');
+      expect(tc.extractTar).toHaveBeenCalledWith('file.tar.gz', '/opt/cni/bin');
+    });
+  });
+
   describe('installCriCtl', () => {
     beforeEach(() => {
       axios.mockImplementationOnce(async () => ({
