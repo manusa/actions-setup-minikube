@@ -55,9 +55,9 @@ const installCniPlugins = async (inputs = {}) => {
     assetPredicate: asset =>
       isLinux(asset.name) && isAmd64(asset.name) && !isSignature(asset.name) && asset.name.indexOf('cni-plugins') === 0
   });
+  const extractedTarDir = await tc.extractTar(tar);
   const cniBinDirPath = '/opt/cni/bin';
-  logExecSync(`sudo mkdir -p ${cniBinDirPath}`);
-  await tc.extractTar(tar, cniBinDirPath);
+  logExecSync(`sudo find ${extractedTarDir} -type f -exec install -Dm 0755 "{}" "${cniBinDirPath}" \\;`);
 };
 
 const installCriCtl = async (inputs = {}) => {
