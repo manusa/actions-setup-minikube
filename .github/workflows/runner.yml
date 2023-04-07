@@ -64,7 +64,7 @@ jobs:
       - name: Test Action
         uses: ./
         with:
-          minikube version: v1.28.0
+          minikube version: v1.30.1
           kubernetes version: v1.25.4
           github token: ${{ secrets.GITHUB_TOKEN }}
           start args: '--addons=registry --addons=metrics-server'
@@ -85,7 +85,7 @@ jobs:
       - name: Test Action
         uses: ./
         with:
-          minikube version: v1.28.0
+          minikube version: v1.30.1
           kubernetes version: v1.25.4
           github token: ${{ secrets.GITHUB_TOKEN }}
           start args: '--addons=ingress'
