@@ -24,6 +24,11 @@ describe('configure-docker module test suite', () => {
           'sudo apt-get install -y conntrack'
         );
       });
+      test('disables fs protection (HOST_JUJU_LOCK_PERMISSION with minikube 1.31)', () => {
+        expect(logExecSync).toHaveBeenCalledWith(
+          'sudo sysctl fs.protected_regular=0'
+        );
+      });
       test('waits for docker to be ready', () => {
         expect(logExecSync).toHaveBeenCalledWith(
           "docker version -f '{{.Server.Version}} - {{.Client.Version}}'"
@@ -41,6 +46,11 @@ describe('configure-docker module test suite', () => {
         expect(logExecSync).toHaveBeenCalledWith('sudo apt update -y');
         expect(logExecSync).toHaveBeenCalledWith(
           'sudo apt-get install -y conntrack'
+        );
+      });
+      test('disables fs protection (HOST_JUJU_LOCK_PERMISSION with minikube 1.31)', () => {
+        expect(logExecSync).toHaveBeenCalledWith(
+          'sudo sysctl fs.protected_regular=0'
         );
       });
       test('installs cni plugins', () => {
@@ -61,6 +71,11 @@ describe('configure-docker module test suite', () => {
         expect(logExecSync).toHaveBeenCalledWith('sudo apt update -y');
         expect(logExecSync).toHaveBeenCalledWith(
           'sudo apt-get install -y conntrack'
+        );
+      });
+      test('disables fs protection (HOST_JUJU_LOCK_PERMISSION with minikube 1.31)', () => {
+        expect(logExecSync).toHaveBeenCalledWith(
+          'sudo sysctl fs.protected_regular=0'
         );
       });
       test('installs cni plugins', () => {
