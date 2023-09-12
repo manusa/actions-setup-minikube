@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-22.04
     strategy:
       matrix:
-        kubernetes: [v1.25.4,v1.24.4,v1.23.14,v1.22.12]
+        kubernetes: [v1.26.8,v1.25.13,v1.24.17,v1.23.17]
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -21,7 +21,7 @@ jobs:
       - name: Test Action
         uses: ./
         with:
-          minikube version: v1.28.0
+          minikube version: v1.29.0
           kubernetes version: ${{ matrix.kubernetes }}
           github token: ${{ secrets.GITHUB_TOKEN }}
       - name: Validate Minikube
@@ -41,8 +41,8 @@ jobs:
       - name: Test Action
         uses: ./
         with:
-          minikube version: v1.28.0
-          kubernetes version: v1.25.4
+          minikube version: v1.29.0
+          kubernetes version: v1.26.8
           github token: ${{ secrets.GITHUB_TOKEN }}
           driver: docker
       - name: Validate Minikube
@@ -64,8 +64,8 @@ jobs:
       - name: Test Action
         uses: ./
         with:
-          minikube version: v1.28.0
-          kubernetes version: v1.25.4
+          minikube version: v1.29.0
+          kubernetes version: v1.26.8
           github token: ${{ secrets.GITHUB_TOKEN }}
           start args: '--addons=registry --addons=metrics-server'
       - name: Validate Minikube
@@ -85,8 +85,8 @@ jobs:
       - name: Test Action
         uses: ./
         with:
-          minikube version: v1.28.0
-          kubernetes version: v1.25.4
+          minikube version: v1.29.0
+          kubernetes version: v1.26.8
           github token: ${{ secrets.GITHUB_TOKEN }}
           start args: '--addons=ingress'
       - name: Validate Minikube
@@ -100,7 +100,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        kubernetes: [v1.25.4,1.24.8,v1.19.16]
+        kubernetes: [v1.26.8,v1.25.4,v1.19.16]
         container_runtime: ['containerd']
     steps:
       - name: Checkout
@@ -110,7 +110,7 @@ jobs:
       - name: Test Action
         uses: ./
         with:
-          minikube version: v1.28.0
+          minikube version: v1.29.0
           kubernetes version: ${{ matrix.kubernetes }}
           github token: ${{ secrets.GITHUB_TOKEN }}
           container runtime: ${{ matrix.container_runtime }}
@@ -126,7 +126,7 @@ jobs:
     runs-on: ubuntu-20.04
     strategy:
       matrix:
-        kubernetes: [v1.22.15,v1.21.14,v1.20.15,v1.19.16,v1.18.20,v1.17.17]
+        kubernetes: [v1.22.17,v1.21.14,v1.20.15,v1.19.16,v1.18.20,v1.17.17]
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -135,7 +135,7 @@ jobs:
       - name: Test Action
         uses: ./
         with:
-          minikube version: v1.28.0
+          minikube version: v1.29.0
           kubernetes version: ${{ matrix.kubernetes }}
           github token: ${{ secrets.GITHUB_TOKEN }}
       - name: Validate Minikube

@@ -22,16 +22,18 @@ const waitForDocker = async (attempt = 0) => {
 };
 
 const configureEnvironment = async (inputs = {}) => {
+  const {driver = 'none'} = inputs;
   core.info('Updating Environment configuration to support Minikube');
   logExecSync('sudo apt update -y');
   logExecSync('sudo apt-get install -y conntrack');
-  if (inputs.driver === 'docker') {
+  if (driver === 'docker') {
     core.info('Waiting for Docker to be ready');
     await waitForDocker();
+  } else {
+    await download.installCniPlugins(inputs);
+    await download.installCriCtl(inputs);
+    await download.installCriDockerd(inputs);
   }
-  await download.installCniPlugins(inputs);
-  await download.installCriCtl(inputs);
-  await download.installCriDockerd(inputs);
 };
 
 module.exports = configureEnvironment;
