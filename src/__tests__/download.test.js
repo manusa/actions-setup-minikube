@@ -5,7 +5,8 @@ describe('download module test suite', () => {
   beforeEach(() => {
     jest.resetModules();
     jest.mock('fs', () => ({
-      promises: {}
+      promises: {},
+      constants: {}
     }));
     jest.mock('@actions/tool-cache');
     jest.mock('@actions/core');
