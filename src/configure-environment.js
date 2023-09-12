@@ -26,6 +26,8 @@ const configureEnvironment = async (inputs = {}) => {
   core.info('Updating Environment configuration to support Minikube');
   logExecSync('sudo apt update -y');
   logExecSync('sudo apt-get install -y conntrack');
+  // Resolves: Exiting due to HOST_JUJU_LOCK_PERMISSION: Failed to start host: boot lock: unable to open /tmp/juju-xxnnn: permission denied
+  logExecSync('sudo sysctl fs.protected_regular=0');
   if (driver === 'docker') {
     core.info('Waiting for Docker to be ready');
     await waitForDocker();
