@@ -57,7 +57,7 @@ const installCniPlugins = async (inputs = {}) => {
   });
   const extractedTarDir = await tc.extractTar(tar);
   const cniBinDirPath = '/opt/cni/bin';
-  logExecSync(`sudo find ${extractedTarDir} -type f -exec install -Dm 0755 "{}" "${cniBinDirPath}" \\;`);
+  logExecSync(`sudo find ${extractedTarDir} -type f -exec install -Dm 0755 "{}" -t "${cniBinDirPath}" \\;`);
 };
 
 const installCriCtl = async (inputs = {}) => {
