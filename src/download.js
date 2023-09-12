@@ -48,7 +48,7 @@ const downloadMinikube = async (inputs = {}) => {
 // https://github.com/kubernetes/minikube/commit/fd549f396dbd39385baefe88dcead0ccf99f1bff
 const installCniPlugins = async (inputs = {}) => {
   core.info(`Downloading CNI plugins`);
-  const tag = 'v1.2.0';
+  const tag = 'v1.3.0';
   const tar = await downloadGitHubArtifact({
     inputs,
     releaseUrl: `https://api.github.com/repos/containernetworking/plugins/releases/tags/${tag}`,
