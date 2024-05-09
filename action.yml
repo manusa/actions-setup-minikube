@@ -20,5 +20,5 @@ inputs:
   start args:
     description: 'Additional arguments to append to minikube start command'
 runs:
-  using: 'node16'
+  using: 'node20'
   main: 'src/index.js'
