@@ -27,12 +27,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Setup Minikube
         uses: manusa/actions-setup-minikube@v2.10.0
         with:
-          minikube version: 'v1.32.0'
-          kubernetes version: 'v1.29.0'
+          minikube version: 'v1.33.0'
+          kubernetes version: 'v1.30.0'
           github token: ${{ secrets.GITHUB_TOKEN }}
       - name: Interact with the cluster
         run: kubectl get nodes
