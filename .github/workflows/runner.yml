@@ -9,10 +9,10 @@ on:
 jobs:
   default-inputs:
     name: Defaults
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     strategy:
       matrix:
-        kubernetes: [v1.29.0,v1.28.5,v1.27.9,v1.26.11]
+        kubernetes: [v1.30.0,v1.29.4,v1.28.9,v1.27.13]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -42,7 +42,7 @@ jobs:
         uses: ./
         with:
           minikube version: v1.33.0
-          kubernetes version: v1.29.0
+          kubernetes version: v1.30.0
           github token: ${{ secrets.GITHUB_TOKEN }}
           driver: docker
       - name: Validate Minikube
@@ -86,7 +86,7 @@ jobs:
         uses: ./
         with:
           minikube version: v1.33.0
-          kubernetes version: v1.29.0
+          kubernetes version: v1.30.0
           github token: ${{ secrets.GITHUB_TOKEN }}
           start args: '--addons=ingress'
       - name: Validate Minikube
@@ -100,7 +100,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        kubernetes: [v1.29.0,v1.28.5,v1.27.9,v1.26.11,v1.20.15]
+        kubernetes: [v1.30.0,v1.29.4,v1.28.9,v1.27.13,v1.20.15]
         container_runtime: ['containerd']
     steps:
       - name: Checkout
@@ -126,7 +126,7 @@ jobs:
     runs-on: ubuntu-20.04
     strategy:
       matrix:
-        kubernetes: [v1.25.16,v1.24.17,v1.23.17,v1.22.17,v1.21.14,v1.20.15]
+        kubernetes: [v1.26.15,v1.25.16,v1.24.17,v1.23.17,v1.22.17,v1.21.14,v1.20.15]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
