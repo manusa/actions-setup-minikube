@@ -31,7 +31,7 @@ jobs:
       - name: Setup Minikube
         uses: manusa/actions-setup-minikube@v2.11.0
         with:
-          minikube version: 'v1.33.0'
+          minikube version: 'v1.34.0'
           kubernetes version: 'v1.30.0'
           github token: ${{ secrets.GITHUB_TOKEN }}
       - name: Interact with the cluster
