@@ -2,7 +2,7 @@ Setup Minikube GitHub Action
 ===============================
 
 [<img src="https://github.com/manusa/actions-setup-minikube/workflows/Perform checks/badge.svg"/>](https://github.com/manusa/actions-setup-minikube/actions)
-[<img src="https://github.com/manusa/actions-setup-minikube/workflows/Run action and validate environment/badge.svg"/>](https://github.com/manusa/actions-setup-minikube/actions)
+[![Run action (E2E tests)](https://github.com/manusa/actions-setup-minikube/actions/workflows/runner.yml/badge.svg)](https://github.com/manusa/actions-setup-minikube/actions/workflows/runner.yml)
 
 Set up your GitHub Actions workflow with a specific version of
 [Minikube](https://github.com/kubernetes/minikube)
