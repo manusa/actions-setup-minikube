@@ -8,6 +8,7 @@ describe('install module test suite', () => {
     jest.resetModules();
     jest.mock('@actions/core');
     jest.mock('@actions/io', () => ({
+      mkdirP: jest.fn(() => {}),
       mv: jest.fn(() => {})
     }));
     jest.mock('path');

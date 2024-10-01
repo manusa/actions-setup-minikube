@@ -18,6 +18,11 @@ const install = async (minikube, inputs) => {
   core.info('Installing Minikube');
   logExecSync(`chmod +x ${minikube}`);
   const minikubeDirectory = path.dirname(minikube);
+  // See https://github.com/kubernetes/minikube/pull/18648
+  // https://github.com/kubernetes/minikube/issues/15835
+  // Since v1.34.0 minikube doesn't automatically append .minikube to the MINIKUBE_HOME variable unless the directory exists
+  // By creating it manually we ensure compatibility with current and legacy versions.
+  await io.mkdirP(path.join(minikubeDirectory, '.minikube'));
   await io.mv(minikube, path.join(minikubeDirectory, 'minikube'));
   core.exportVariable('MINIKUBE_HOME', minikubeDirectory);
   core.addPath(minikubeDirectory);
