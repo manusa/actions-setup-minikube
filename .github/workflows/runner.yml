@@ -21,7 +21,7 @@ jobs:
       - name: Test Action
         uses: ./
         with:
-          minikube version: v1.34.0
+          minikube version: v1.35.0
           kubernetes version: ${{ matrix.kubernetes }}
           github token: ${{ secrets.GITHUB_TOKEN }}
       - name: Validate Minikube
@@ -41,7 +41,7 @@ jobs:
       - name: Test Action
         uses: ./
         with:
-          minikube version: v1.34.0
+          minikube version: v1.35.0
           kubernetes version: v1.32.0
           github token: ${{ secrets.GITHUB_TOKEN }}
           driver: docker
@@ -64,7 +64,7 @@ jobs:
       - name: Test Action
         uses: ./
         with:
-          minikube version: v1.34.0
+          minikube version: v1.35.0
           kubernetes version: v1.32.0
           github token: ${{ secrets.GITHUB_TOKEN }}
           start args: '--addons=registry --addons=metrics-server'
@@ -85,7 +85,7 @@ jobs:
       - name: Test Action
         uses: ./
         with:
-          minikube version: v1.34.0
+          minikube version: v1.35.0
           kubernetes version: v1.32.0
           github token: ${{ secrets.GITHUB_TOKEN }}
           start args: '--addons=ingress'
@@ -110,7 +110,7 @@ jobs:
       - name: Test Action
         uses: ./
         with:
-          minikube version: v1.34.0
+          minikube version: v1.35.0
           kubernetes version: ${{ matrix.kubernetes }}
           github token: ${{ secrets.GITHUB_TOKEN }}
           container runtime: ${{ matrix.container_runtime }}
@@ -135,7 +135,7 @@ jobs:
       - name: Test Action
         uses: ./
         with:
-          minikube version: v1.34.0
+          minikube version: v1.35.0
           kubernetes version: ${{ matrix.kubernetes }}
           github token: ${{ secrets.GITHUB_TOKEN }}
       - name: Validate Minikube
