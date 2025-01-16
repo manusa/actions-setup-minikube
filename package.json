@@ -21,7 +21,7 @@
     "kubectl",
     "k8s"
   ],
-  "author": "Marc Nuri <marc@marcnuri.com> (http://blog.marcnuri.com)",
+  "author": "Marc Nuri <marc@marcnuri.com> (https://blog.marcnuri.com)",
   "license": "Apache-2.0",
   "bugs": {
     "url": "https://github.com/manusa/actions-setup-minikube/issues"
@@ -31,7 +31,7 @@
     "@actions/core": "1.11.1",
     "@actions/github": "6.0.0",
     "@actions/io": "1.1.3",
-    "@actions/tool-cache": "2.0.1",
+    "@actions/tool-cache": "2.0.2",
     "axios": "1.7.7"
   },
   "devDependencies": {
