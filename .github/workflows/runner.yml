@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        kubernetes: [v1.32.0,v1.31.4,v1.30.8,v1.29.12]
+        kubernetes: [v1.33.0,v1.32.4,v1.31.8,v1.30.12]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -42,7 +42,7 @@ jobs:
         uses: ./
         with:
           minikube version: v1.35.0
-          kubernetes version: v1.32.0
+          kubernetes version: v1.33.0
           github token: ${{ secrets.GITHUB_TOKEN }}
           driver: docker
       - name: Validate Minikube
@@ -65,7 +65,7 @@ jobs:
         uses: ./
         with:
           minikube version: v1.35.0
-          kubernetes version: v1.32.0
+          kubernetes version: v1.33.0
           github token: ${{ secrets.GITHUB_TOKEN }}
           start args: '--addons=registry --addons=metrics-server'
       - name: Validate Minikube
@@ -86,7 +86,7 @@ jobs:
         uses: ./
         with:
           minikube version: v1.35.0
-          kubernetes version: v1.32.0
+          kubernetes version: v1.33.0
           github token: ${{ secrets.GITHUB_TOKEN }}
           start args: '--addons=ingress'
       - name: Validate Minikube
@@ -100,7 +100,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        kubernetes: [v1.32.0,v1.31.4,v1.30.8,v1.29.12,v1.20.15]
+        kubernetes: [v1.33.0,v1.32.4,v1.31.8,v1.30.12,v1.20.15]
         container_runtime: ['containerd']
     steps:
       - name: Checkout
@@ -123,10 +123,10 @@ jobs:
         run: 'cat $MINIKUBE_HOME/.minikube/machines/minikube/config.json | jq ".Driver.NodeConfig.ContainerRuntime" | grep "${{ matrix.container_runtime }}"'
   unsupported:
     name: Unsupported K8s versions
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     strategy:
       matrix:
-        kubernetes: [v1.28.15,v1.27.16,v1.26.15,v1.25.16,v1.24.17,v1.23.17,v1.22.17,v1.21.14,v1.20.15]
+        kubernetes: [v1.29.14,v1.28.15,v1.27.16,v1.26.15,v1.25.16,v1.24.17,v1.23.17,v1.22.17]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -138,27 +138,6 @@ jobs:
           minikube version: v1.35.0
           kubernetes version: ${{ matrix.kubernetes }}
           github token: ${{ secrets.GITHUB_TOKEN }}
-      - name: Validate Minikube
-        run: minikube status | grep Running
-      - name: Validate Cluster
-        run: kubectl get nodes
-      - name: Validate default driver
-        run: 'cat $MINIKUBE_HOME/.minikube/machines/minikube/config.json | jq ".DriverName" | grep none'
-  legacy-20:
-    name: Legacy/old versions (Ubuntu 20, Minikube 1.18, K8s 1.14)
-    runs-on: ubuntu-20.04
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Setup Node
-        uses: actions/setup-node@master
-      - name: Test Action
-        uses: ./
-        with:
-          minikube version: v1.18.0
-          kubernetes version: v1.14.10
-          github token: ${{ secrets.GITHUB_TOKEN }}
-          start args: '--force'
       - name: Validate Minikube
         run: minikube status | grep Running
       - name: Validate Cluster
