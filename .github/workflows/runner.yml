@@ -126,7 +126,7 @@ jobs:
     runs-on: ubuntu-22.04
     strategy:
       matrix:
-        kubernetes: [v1.29.14,v1.28.15,v1.27.16,v1.26.15,v1.25.16,v1.24.17,v1.23.17,v1.22.17]
+        kubernetes: [v1.29.14,v1.28.15,v1.27.16,v1.26.15,v1.25.16,v1.24.17]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
