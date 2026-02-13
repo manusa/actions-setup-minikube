@@ -188,10 +188,13 @@ describe('UserService', () => {
 
 ### Updating Dependencies
 
-1. Update version in `package.json`
+1. Update version in `package.json` or `src/*.js`
 2. Run `npm install`
 3. Test with `npm test` and `npm run format-check`
-4. Note: `node_modules/` is committed (required for GitHub Actions)
+4. **Before committing**: Run `npm prune --omit=dev` to remove devDependencies
+5. Commit changes including `node_modules/` (required for GitHub Actions - only production deps)
+
+**Important**: GitHub Actions run directly from the repository, so `node_modules/` must be committed. However, only production dependencies should be included. Always prune devDependencies before committing.
 
 ### Releasing a New Version
 

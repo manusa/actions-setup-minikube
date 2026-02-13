@@ -211,7 +211,7 @@ describe('download module test suite', () => {
       // Then
       expect(axios).toHaveBeenCalledWith(
         expect.objectContaining({
-          url: 'https://api.github.com/repos/Mirantis/cri-dockerd/releases/tags/v0.3.4',
+          url: 'https://api.github.com/repos/Mirantis/cri-dockerd/releases/tags/v0.3.24',
           headers: {Authorization: 'token secret-token'}
         })
       );
