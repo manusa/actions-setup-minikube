@@ -64,8 +64,8 @@ jobs:
       - name: Test Action
         uses: ./
         with:
-          minikube version: v1.35.0
-          kubernetes version: v1.33.0
+          minikube version: v1.38.0
+          kubernetes version: v1.34.4
           github token: ${{ secrets.GITHUB_TOKEN }}
           start args: '--addons=registry --addons=metrics-server'
       - name: Validate Minikube
