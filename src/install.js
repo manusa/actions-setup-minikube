@@ -5,6 +5,7 @@ const execSync = require('./exec').execSync;
 const logExecSync = require('./exec').logExecSync;
 const path = require('path');
 const io = require('@actions/io');
+const validate = require('./validate');
 
 const driver = inputs => inputs.driver || 'none';
 const sudo = inputs => {
@@ -26,6 +27,7 @@ const install = async (minikube, inputs) => {
   await io.mv(minikube, path.join(minikubeDirectory, 'minikube'));
   core.exportVariable('MINIKUBE_HOME', minikubeDirectory);
   core.addPath(minikubeDirectory);
+  validate(minikubeDirectory, inputs);
   const containerRuntime = inputs.containerRuntime ? `--container-runtime=${inputs.containerRuntime}` : ''
   logExecSync(
     `${sudo(inputs)} ${minikubeDirectory}/minikube start --vm-driver=${driver(
