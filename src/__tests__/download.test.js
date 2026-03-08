@@ -102,7 +102,7 @@ describe('download module test suite', () => {
       // Then
       expect(github.gitHubRequest).toHaveBeenCalledWith(
         expect.objectContaining({
-          url: 'https://api.github.com/repos/containernetworking/plugins/releases/tags/v1.3.0',
+          url: 'https://api.github.com/repos/containernetworking/plugins/releases/tags/v1.9.0',
           githubToken: 'secret-token'
         })
       );
