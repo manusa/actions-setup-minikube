@@ -102,6 +102,35 @@ describe('install module test suite', () => {
       expect.stringContaining('--force')
     );
   });
+  test('install, should set force output for unsupported kubernetes version', async () => {
+    // Given
+    const inputs = {
+      minikubeVersion: 'v1.33.7',
+      kubernetesVersion: 'v1.99.0',
+      startArgs: ''
+    };
+    checkKubernetesVersion.mockResolvedValue('unsupported');
+    exec.logExecSync.mockImplementation();
+    exec.execSync.mockImplementation(() => '');
+    // When
+    await install('minikubeFileLocation', inputs);
+    // Then
+    expect(core.setOutput).toHaveBeenCalledWith('force', 'true');
+  });
+  test('install, should not set force output for supported kubernetes version', async () => {
+    // Given
+    const inputs = {
+      minikubeVersion: 'v1.33.7',
+      kubernetesVersion: 'v1.33.7',
+      startArgs: ''
+    };
+    exec.logExecSync.mockImplementation();
+    exec.execSync.mockImplementation(() => '');
+    // When
+    await install('minikubeFileLocation', inputs);
+    // Then
+    expect(core.setOutput).not.toHaveBeenCalledWith('force', 'true');
+  });
   test('install, should not add --force for supported kubernetes version', async () => {
     // Given
     const inputs = {

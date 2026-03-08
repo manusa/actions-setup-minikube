@@ -43,6 +43,7 @@ const install = async (minikube, inputs) => {
     core.warning(
       `Adding --force flag to minikube start because Kubernetes version ${inputs.kubernetesVersion} is not in Minikube's default supported list`
     );
+    core.setOutput('force', 'true');
   }
   const startCommand = [
     sudo(inputs),

@@ -175,12 +175,19 @@ jobs:
           fi
           echo "${KUBERNETES_VERSION} is NOT in Minikube's supported list (as expected)"
       - name: Test Action
+        id: setup-minikube
         uses: ./
         with:
           minikube version: ${{ env.MINIKUBE_VERSION }}
           kubernetes version: ${{ env.KUBERNETES_VERSION }}
           github token: ${{ secrets.GITHUB_TOKEN }}
           driver: docker
+      - name: Validate --force was used
+        run: |
+          if [ "${{ steps.setup-minikube.outputs.force }}" != "true" ]; then
+            echo "::error::Expected force output to be 'true' but got '${{ steps.setup-minikube.outputs.force }}'"
+            exit 1
+          fi
       - name: Validate Minikube
         run: minikube status | grep Running
       - name: Validate Cluster

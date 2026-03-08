@@ -19,6 +19,9 @@ inputs:
     description: 'The container runtime to be used (valid options: docker, cri-o, containerd)'
   start args:
     description: 'Additional arguments to append to minikube start command'
+outputs:
+  force:
+    description: 'Set to true when --force was added to minikube start because the requested Kubernetes version is not in Minikube built-in supported list'
 runs:
   using: 'node20'
   main: 'src/index.js'
