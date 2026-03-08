@@ -144,3 +144,46 @@ jobs:
         run: kubectl get nodes
       - name: Validate default driver
         run: 'cat $MINIKUBE_HOME/.minikube/machines/minikube/config.json | jq ".DriverName" | grep none'
+  # Validates the --force workaround for K8s versions not in Minikube's
+  # built-in supported list. When the requested version is newer (or older)
+  # than what Minikube ships with, the action should:
+  # 1. Detect the version is not in `minikube config defaults kubernetes-version`
+  # 2. Verify the version exists on GitHub (kubernetes/kubernetes releases)
+  # 3. Warn the user and add --force to `minikube start` to bypass Minikube's
+  #    internal unauthenticated GitHub API check (which causes rate-limit errors)
+  # See https://github.com/manusa/actions-setup-minikube/issues/141
+  unsupported-with-force:
+    name: Unsupported K8s version (--force)
+    runs-on: ubuntu-latest
+    env:
+      MINIKUBE_VERSION: v1.35.0
+      KUBERNETES_VERSION: v1.33.0
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@master
+      - name: Verify K8s version is not in Minikube supported list
+        run: |
+          curl -sL "https://github.com/kubernetes/minikube/releases/download/${MINIKUBE_VERSION}/minikube-linux-amd64" -o /tmp/minikube
+          chmod +x /tmp/minikube
+          echo "Minikube supported versions (first 10):"
+          /tmp/minikube config defaults kubernetes-version | head -10
+          if /tmp/minikube config defaults kubernetes-version | grep -q "^\\* ${KUBERNETES_VERSION}$"; then
+            echo "::error::${KUBERNETES_VERSION} is in Minikube's supported list, pick a different version for this test"
+            exit 1
+          fi
+          echo "${KUBERNETES_VERSION} is NOT in Minikube's supported list (as expected)"
+      - name: Test Action
+        uses: ./
+        with:
+          minikube version: ${{ env.MINIKUBE_VERSION }}
+          kubernetes version: ${{ env.KUBERNETES_VERSION }}
+          github token: ${{ secrets.GITHUB_TOKEN }}
+          driver: docker
+      - name: Validate Minikube
+        run: minikube status | grep Running
+      - name: Validate Cluster
+        run: kubectl get nodes
+      - name: Validate Kubernetes version
+        run: kubectl version -o json | jq -r '.serverVersion.gitVersion' | grep "${{ env.KUBERNETES_VERSION }}"

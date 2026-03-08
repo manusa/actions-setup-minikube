@@ -1,6 +1,6 @@
 describe('download module test suite', () => {
   let download;
-  let axios;
+  let github;
   let tc;
   beforeEach(() => {
     jest.resetModules();
@@ -10,15 +10,15 @@ describe('download module test suite', () => {
     }));
     jest.mock('@actions/tool-cache');
     jest.mock('@actions/core');
-    jest.mock('axios');
+    jest.mock('../github');
     jest.mock('../exec');
     tc = require('@actions/tool-cache');
-    axios = require('axios');
+    github = require('../github');
     download = require('../download');
   });
   describe('downloadMinikube', () => {
     beforeEach(() => {
-      axios.mockImplementationOnce(async () => ({
+      github.gitHubRequest.mockImplementationOnce(async () => ({
         data: {
           assets: [
             {
@@ -44,7 +44,7 @@ describe('download module test suite', () => {
       // When
       await download.downloadMinikube(inputs);
       // Then
-      expect(axios).toHaveBeenCalledWith(
+      expect(github.gitHubRequest).toHaveBeenCalledWith(
         expect.objectContaining({
           url: 'https://api.github.com/repos/kubernetes/minikube/releases/tags/v1.33.7'
         })
@@ -58,10 +58,10 @@ describe('download module test suite', () => {
       // When
       await download.downloadMinikube(inputs);
       // Then
-      expect(axios).toHaveBeenCalledWith(
+      expect(github.gitHubRequest).toHaveBeenCalledWith(
         expect.objectContaining({
           url: 'https://api.github.com/repos/kubernetes/minikube/releases/tags/v1.33.7',
-          headers: {Authorization: 'token secret-token'}
+          githubToken: 'secret-token'
         })
       );
       expect(tc.downloadTool).toHaveBeenCalledWith('http://valid');
@@ -72,7 +72,7 @@ describe('download module test suite', () => {
     let exec;
     beforeEach(() => {
       exec = require('../exec');
-      axios.mockImplementationOnce(async () => ({
+      github.gitHubRequest.mockImplementationOnce(async () => ({
         data: {
           assets: [
             {
@@ -100,10 +100,10 @@ describe('download module test suite', () => {
       // When
       await download.installCniPlugins({githubToken: 'secret-token'});
       // Then
-      expect(axios).toHaveBeenCalledWith(
+      expect(github.gitHubRequest).toHaveBeenCalledWith(
         expect.objectContaining({
           url: 'https://api.github.com/repos/containernetworking/plugins/releases/tags/v1.3.0',
-          headers: {Authorization: 'token secret-token'}
+          githubToken: 'secret-token'
         })
       );
       expect(tc.downloadTool).toHaveBeenCalledWith('http://valid');
@@ -123,7 +123,7 @@ describe('download module test suite', () => {
 
   describe('installCriCtl', () => {
     beforeEach(() => {
-      axios.mockImplementationOnce(async () => ({
+      github.gitHubRequest.mockImplementationOnce(async () => ({
         data: {
           assets: [
             {
@@ -148,10 +148,10 @@ describe('download module test suite', () => {
       // When
       await download.installCriCtl({githubToken: 'secret-token'});
       // Then
-      expect(axios).toHaveBeenCalledWith(
+      expect(github.gitHubRequest).toHaveBeenCalledWith(
         expect.objectContaining({
           url: 'https://api.github.com/repos/kubernetes-sigs/cri-tools/releases/tags/v1.28.0',
-          headers: {Authorization: 'token secret-token'}
+          githubToken: 'secret-token'
         })
       );
       expect(tc.downloadTool).toHaveBeenCalledWith('http://valid');
@@ -168,7 +168,7 @@ describe('download module test suite', () => {
     beforeEach(() => {
       fs = require('fs');
       exec = require('../exec');
-      axios.mockImplementationOnce(async () => ({
+      github.gitHubRequest.mockImplementationOnce(async () => ({
         data: {
           assets: [
             {
@@ -209,10 +209,10 @@ describe('download module test suite', () => {
       // When
       await download.installCriDockerd({githubToken: 'secret-token'});
       // Then
-      expect(axios).toHaveBeenCalledWith(
+      expect(github.gitHubRequest).toHaveBeenCalledWith(
         expect.objectContaining({
           url: 'https://api.github.com/repos/Mirantis/cri-dockerd/releases/tags/v0.3.24',
-          headers: {Authorization: 'token secret-token'}
+          githubToken: 'secret-token'
         })
       );
       expect(tc.downloadTool).toHaveBeenCalledWith('http://valid');
