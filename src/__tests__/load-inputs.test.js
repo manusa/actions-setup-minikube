@@ -73,6 +73,26 @@ describe('loadInputs', () => {
     });
   });
 
+  describe('with versions without v prefix', () => {
+    let result;
+
+    beforeEach(() => {
+      process.env = {
+        INPUT_MINIKUBE_VERSION: '1.33.7',
+        INPUT_KUBERNETES_VERSION: '1.33.1'
+      };
+      result = loadInputs();
+    });
+
+    test('adds v prefix to kubernetes version', () => {
+      expect(result.kubernetesVersion).toBe('v1.33.1');
+    });
+
+    test('adds v prefix to minikube version', () => {
+      expect(result.minikubeVersion).toBe('v1.33.7');
+    });
+  });
+
   describe('with missing required variables', () => {
     test('throws error for missing minikube version', () => {
       expect(loadInputs).toThrow(
