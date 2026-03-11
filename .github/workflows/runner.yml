@@ -157,7 +157,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       MINIKUBE_VERSION: v1.35.0
-      KUBERNETES_VERSION: v1.34.5
+      KUBERNETES_VERSION: v1.33.0
     steps:
       - name: Checkout
         uses: actions/checkout@v4
