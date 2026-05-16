@@ -192,6 +192,16 @@ describe('UserService', () => {
 2. Test locally with `npm test`
 3. Push and verify CI workflows pass
 
+### Adding Support for a New Architecture
+
+Architecture detection lives in `src/arch.js`, which maps `process.arch` to the GitHub release naming convention used by the binaries this action downloads (e.g. `x64` → `amd64`, `arm64` → `arm64`). To add a new architecture:
+
+1. Extend the `switch` in `src/arch.js` with the new `process.arch` value and its GitHub release suffix. Keep the default branch throwing — the strict allow-list is intentional so unsupported runners fail fast.
+2. Add coverage in `src/__tests__/arch.test.js` (the success case) and `src/__tests__/check-environment.test.js` (the fail-fast behavior on unsupported archs).
+3. Add fixtures and an `on <arch> host` describe in `src/__tests__/download.test.js` for each of the four downloads (Minikube, CNI plugins, crictl, cri-dockerd) so the asset predicates are verified end-to-end.
+4. Extend the `os` matrix axis in `.github/workflows/runner.yml` for the jobs that exercise the relevant code path (at minimum `default-inputs` for the `none` driver and `docker-driver` for the docker path).
+5. Confirm the four upstreams publish assets for the new architecture before relying on it — release naming is upstream-defined and not all tags carry every arch.
+
 ### Adding a New Action Input
 
 1. Add input definition in `action.yml`

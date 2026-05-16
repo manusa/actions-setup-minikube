@@ -10,7 +10,7 @@ and [Kubernetes](https://github.com/kubernetes/kubernetes).
 
 _Currently only Linux Ubuntu 18.04, 20.04, 22.04, or 24.04
 [CI environment](https://help.github.com/en/github/automating-your-workflow-with-github-actions/virtual-environments-for-github-actions)
-is supported._
+is supported, on either x64 (amd64) or arm64 (e.g. `ubuntu-24.04-arm`) runners._
 
 ## Usage
 
