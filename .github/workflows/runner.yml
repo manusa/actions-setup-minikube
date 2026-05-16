@@ -59,7 +59,10 @@ jobs:
         run: minikube ssh --native-ssh=false "cat /etc/os-release"
   extra-args:
     name: Extra arguments
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, ubuntu-24.04-arm]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -80,7 +83,10 @@ jobs:
         run: minikube addons list -o json | jq '.registry.Status' | grep enabled
   ingress:
     name: Ingress enabled
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, ubuntu-24.04-arm]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -101,9 +107,10 @@ jobs:
         run: minikube addons list -o json | jq '.ingress.Status' | grep enabled
   container-runtime:
     name: Container runtime config in docker driver (Required by containerd)
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
+        os: [ubuntu-latest, ubuntu-24.04-arm]
         kubernetes: [v1.35.2,v1.34.5,v1.33.9,v1.32.13,v1.31.14,v1.26.15]
         container_runtime: ['containerd']
     steps:
