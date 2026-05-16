@@ -8,14 +8,17 @@ const originalReadFileSync = fs.readFileSync.bind(fs);
 describe('checkEnvironment', () => {
   let checkEnvironment;
   let originalPlatform;
+  let originalArch;
 
   beforeEach(() => {
     jest.resetModules();
     originalPlatform = process.platform;
+    originalArch = process.arch;
   });
 
   afterEach(() => {
     Object.defineProperty(process, 'platform', {value: originalPlatform});
+    Object.defineProperty(process, 'arch', {value: originalArch});
     jest.restoreAllMocks();
   });
 
@@ -82,6 +85,26 @@ describe('checkEnvironment', () => {
 
     test('does not throw', () => {
       expect(checkEnvironment).not.toThrow();
+    });
+
+    describe('on arm64 host', () => {
+      beforeEach(() => {
+        Object.defineProperty(process, 'arch', {value: 'arm64'});
+      });
+
+      test('does not throw', () => {
+        expect(checkEnvironment).not.toThrow();
+      });
+    });
+
+    describe('on unsupported architecture', () => {
+      beforeEach(() => {
+        Object.defineProperty(process, 'arch', {value: 'ppc64'});
+      });
+
+      test('throws unsupported architecture error', () => {
+        expect(checkEnvironment).toThrow(/Unsupported architecture/);
+      });
     });
   });
 });

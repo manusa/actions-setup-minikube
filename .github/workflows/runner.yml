@@ -9,9 +9,10 @@ on:
 jobs:
   default-inputs:
     name: Defaults
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
+        os: [ubuntu-latest, ubuntu-24.04-arm]
         kubernetes: [v1.35.2,v1.34.5,v1.33.9,v1.32.13,v1.31.14]
     steps:
       - name: Checkout
@@ -32,7 +33,10 @@ jobs:
         run: 'cat $MINIKUBE_HOME/.minikube/machines/minikube/config.json | jq ".DriverName" | grep none'
   docker-driver:
     name: Docker driver
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, ubuntu-24.04-arm]
     steps:
       - name: Checkout
         uses: actions/checkout@v4

@@ -1,6 +1,7 @@
 'use strict';
 
 const fs = require('node:fs');
+const {arch} = require('./arch');
 
 const isLinux = () => process.platform.toLowerCase().indexOf('linux') === 0;
 const isUbuntu = version => () => {
@@ -24,6 +25,7 @@ const checkOperatingSystem = () => {
 
 const checkEnvironment = () => {
   checkOperatingSystem();
+  arch();
 };
 
 module.exports = checkEnvironment;

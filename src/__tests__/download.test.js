@@ -20,6 +20,7 @@ describe('download module', () => {
   let tc;
   let exec;
   let tmpDir;
+  let originalArch;
 
   beforeAll(async () => {
     testServer = createHttpTestServer();
@@ -37,6 +38,7 @@ describe('download module', () => {
     process.env.RUNNER_TEMP = tmpDir;
     process.env.GITHUB_API_URL = baseUrl;
     process.env.GITHUB_SERVER_URL = baseUrl;
+    originalArch = process.arch;
 
     exec = require('../exec');
     download = require('../download');
@@ -51,6 +53,7 @@ describe('download module', () => {
     delete process.env.RUNNER_TEMP;
     delete process.env.GITHUB_API_URL;
     delete process.env.GITHUB_SERVER_URL;
+    Object.defineProperty(process, 'arch', {value: originalArch});
   });
 
   describe('downloadMinikube', () => {
@@ -68,11 +71,22 @@ describe('download module', () => {
           {
             name: 'minikube-linux-amd64.sha256',
             browser_download_url: `${baseUrl}/download/minikube-sha256`
+          },
+          {
+            name: 'minikube-linux-arm64',
+            browser_download_url: `${baseUrl}/download/minikube-linux-arm64`
+          },
+          {
+            name: 'minikube-linux-arm64.sha256',
+            browser_download_url: `${baseUrl}/download/minikube-sha256`
           }
         ]
       });
       testServer.get('/download/minikube-linux-amd64', () => ({
         binary: Buffer.from('fake-minikube-binary')
+      }));
+      testServer.get('/download/minikube-linux-arm64', () => ({
+        binary: Buffer.from('fake-minikube-binary-arm64')
       }));
     });
 
@@ -115,6 +129,44 @@ describe('download module', () => {
         .find(r => r.pathname.includes('/releases/tags/'));
       expect(apiRequest.headers.authorization).toBe('token secret-token');
     });
+
+    describe('on arm64 host', () => {
+      beforeEach(() => {
+        Object.defineProperty(process, 'arch', {value: 'arm64'});
+      });
+
+      test('selects linux arm64 binary, not amd64', async () => {
+        await download.downloadMinikube({minikubeVersion: 'v1.33.7'});
+        const downloadRequests = testServer
+          .getRequests()
+          .filter(r => r.pathname.startsWith('/download/'));
+        expect(downloadRequests).toHaveLength(1);
+        expect(downloadRequests[0].pathname).toBe(
+          '/download/minikube-linux-arm64'
+        );
+      });
+    });
+
+    describe('on arm64 host with no arm64 asset published', () => {
+      beforeEach(() => {
+        Object.defineProperty(process, 'arch', {value: 'arm64'});
+        testServer.clearRoutes();
+        testServer.get('/repos/kubernetes/minikube/releases/tags/v0.1.0', {
+          assets: [
+            {
+              name: 'minikube-linux-amd64',
+              browser_download_url: `${baseUrl}/download/minikube-linux-amd64`
+            }
+          ]
+        });
+      });
+
+      test('throws an actionable error naming the arch', async () => {
+        await expect(
+          download.downloadMinikube({minikubeVersion: 'v0.1.0'})
+        ).rejects.toThrow(/No matching arm64 asset/);
+      });
+    });
   });
 
   describe('installCniPlugins', () => {
@@ -138,7 +190,7 @@ describe('download module', () => {
             },
             {
               name: 'cni-plugins-linux-amd64-v1.9.0.tgz',
-              browser_download_url: `${baseUrl}/download/cni-plugins.tgz`
+              browser_download_url: `${baseUrl}/download/cni-plugins-amd64.tgz`
             },
             {
               name: 'cni-plugins-linux-amd64-v1.9.0.tgz.sha512',
@@ -147,11 +199,22 @@ describe('download module', () => {
             {
               name: 'cni-plugins-windows-amd64-v1.9.0.tgz',
               browser_download_url: `${baseUrl}/invalid`
+            },
+            {
+              name: 'cni-plugins-linux-arm64-v1.9.0.tgz',
+              browser_download_url: `${baseUrl}/download/cni-plugins-arm64.tgz`
+            },
+            {
+              name: 'cni-plugins-linux-arm64-v1.9.0.tgz.sha512',
+              browser_download_url: `${baseUrl}/invalid`
             }
           ]
         }
       );
-      testServer.get('/download/cni-plugins.tgz', () => ({
+      testServer.get('/download/cni-plugins-amd64.tgz', () => ({
+        binary: cniTarball
+      }));
+      testServer.get('/download/cni-plugins-arm64.tgz', () => ({
         binary: cniTarball
       }));
     });
@@ -190,6 +253,34 @@ describe('download module', () => {
         .find(r => r.pathname.includes('/releases/tags/'));
       expect(apiRequest.headers.authorization).toBe('token secret-token');
     });
+
+    test('selects linux amd64 tarball on x64 host', async () => {
+      await download.installCniPlugins({});
+      const downloadRequests = testServer
+        .getRequests()
+        .filter(r => r.pathname.startsWith('/download/'));
+      expect(downloadRequests).toHaveLength(1);
+      expect(downloadRequests[0].pathname).toBe(
+        '/download/cni-plugins-amd64.tgz'
+      );
+    });
+
+    describe('on arm64 host', () => {
+      beforeEach(() => {
+        Object.defineProperty(process, 'arch', {value: 'arm64'});
+      });
+
+      test('selects linux arm64 tarball, not amd64', async () => {
+        await download.installCniPlugins({});
+        const downloadRequests = testServer
+          .getRequests()
+          .filter(r => r.pathname.startsWith('/download/'));
+        expect(downloadRequests).toHaveLength(1);
+        expect(downloadRequests[0].pathname).toBe(
+          '/download/cni-plugins-arm64.tgz'
+        );
+      });
+    });
   });
 
   describe('installCriCtl', () => {
@@ -208,15 +299,26 @@ describe('download module', () => {
           },
           {
             name: 'crictl-linux-amd64.tar.gz',
-            browser_download_url: `${baseUrl}/download/crictl.tar.gz`
+            browser_download_url: `${baseUrl}/download/crictl-amd64.tar.gz`
           },
           {
             name: 'crictl-linux-amd64.sha256',
             browser_download_url: `${baseUrl}/invalid`
+          },
+          {
+            name: 'crictl-linux-arm64.tar.gz',
+            browser_download_url: `${baseUrl}/download/crictl-arm64.tar.gz`
+          },
+          {
+            name: 'crictl-linux-arm64.sha256',
+            browser_download_url: `${baseUrl}/invalid`
           }
         ]
       });
-      testServer.get('/download/crictl.tar.gz', () => ({
+      testServer.get('/download/crictl-amd64.tar.gz', () => ({
+        binary: crictlTarball
+      }));
+      testServer.get('/download/crictl-arm64.tar.gz', () => ({
         binary: crictlTarball
       }));
       // extractTar destination is /usr/local/bin (not writable without sudo)
@@ -264,6 +366,34 @@ describe('download module', () => {
         .find(r => r.pathname.includes('/releases/tags/'));
       expect(apiRequest.headers.authorization).toBe('token secret-token');
     });
+
+    test('selects linux amd64 tarball on x64 host', async () => {
+      await download.installCriCtl({});
+      const downloadRequests = testServer
+        .getRequests()
+        .filter(r => r.pathname.startsWith('/download/'));
+      expect(downloadRequests).toHaveLength(1);
+      expect(downloadRequests[0].pathname).toBe(
+        '/download/crictl-amd64.tar.gz'
+      );
+    });
+
+    describe('on arm64 host', () => {
+      beforeEach(() => {
+        Object.defineProperty(process, 'arch', {value: 'arm64'});
+      });
+
+      test('selects linux arm64 tarball, not amd64', async () => {
+        await download.installCriCtl({});
+        const downloadRequests = testServer
+          .getRequests()
+          .filter(r => r.pathname.startsWith('/download/'));
+        expect(downloadRequests).toHaveLength(1);
+        expect(downloadRequests[0].pathname).toBe(
+          '/download/crictl-arm64.tar.gz'
+        );
+      });
+    });
   });
 
   describe('installCriDockerd', () => {
@@ -298,11 +428,11 @@ describe('download module', () => {
           },
           {
             name: 'cri-dockerd-0.3.4.arm64.tgz',
-            browser_download_url: `${baseUrl}/invalid`
+            browser_download_url: `${baseUrl}/download/cri-dockerd-arm64.tgz`
           },
           {
             name: 'cri-dockerd-0.3.4.amd64.tgz',
-            browser_download_url: `${baseUrl}/download/cri-dockerd.tgz`
+            browser_download_url: `${baseUrl}/download/cri-dockerd-amd64.tgz`
           },
           {
             name: 'cri-dockerd-v0.2.0-linux-amd64.tar.gz.md5',
@@ -310,7 +440,10 @@ describe('download module', () => {
           }
         ]
       });
-      testServer.get('/download/cri-dockerd.tgz', () => ({
+      testServer.get('/download/cri-dockerd-amd64.tgz', () => ({
+        binary: binaryTarball
+      }));
+      testServer.get('/download/cri-dockerd-arm64.tgz', () => ({
         binary: binaryTarball
       }));
       testServer.get(
@@ -351,8 +484,25 @@ describe('download module', () => {
       await download.installCriDockerd({});
       const requests = testServer.getRequests();
       expect(
-        requests.some(r => r.pathname === '/download/cri-dockerd.tgz')
+        requests.some(r => r.pathname === '/download/cri-dockerd-amd64.tgz')
       ).toBe(true);
+    });
+
+    describe('on arm64 host', () => {
+      beforeEach(() => {
+        Object.defineProperty(process, 'arch', {value: 'arm64'});
+      });
+
+      test('selects arm64 tgz, skipping amd64 and darwin', async () => {
+        await download.installCriDockerd({});
+        const requests = testServer.getRequests();
+        expect(
+          requests.some(r => r.pathname === '/download/cri-dockerd-arm64.tgz')
+        ).toBe(true);
+        expect(
+          requests.some(r => r.pathname === '/download/cri-dockerd-amd64.tgz')
+        ).toBe(false);
+      });
     });
 
     test('extracts binary from real tarball', async () => {

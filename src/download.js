@@ -5,9 +5,10 @@ const tc = require('@actions/tool-cache');
 const fs = require('node:fs');
 const {logExecSync} = require('./exec');
 const {gitHubRequest, apiBaseUrl, serverBaseUrl} = require('./github');
+const {arch} = require('./arch');
 
 const isLinux = name => name.indexOf('linux') >= 0;
-const isAmd64 = name => name.indexOf('amd64') >= 0;
+const isArch = name => name.indexOf(arch()) >= 0;
 const isSignature = name =>
   name.indexOf('sha1') >= 0 ||
   name.indexOf('sha256') >= 0 ||
@@ -26,10 +27,14 @@ const downloadGitHubArtifact = async ({inputs, releaseUrl, assetPredicate}) => {
     url: releaseUrl,
     githubToken: inputs.githubToken
   });
-  const downloadUrl =
-    tagInfo.data.assets.find(assetPredicate).browser_download_url;
-  core.info(`Downloading from: ${downloadUrl}`);
-  return tc.downloadTool(downloadUrl);
+  const asset = tagInfo.data.assets.find(assetPredicate);
+  if (!asset) {
+    throw new Error(
+      `No matching ${arch()} asset found at ${releaseUrl}. The release may not publish ${arch()} binaries.`
+    );
+  }
+  core.info(`Downloading from: ${asset.browser_download_url}`);
+  return tc.downloadTool(asset.browser_download_url);
 };
 
 const downloadMinikube = async (inputs = {}) => {
@@ -38,7 +43,7 @@ const downloadMinikube = async (inputs = {}) => {
     inputs,
     releaseUrl: `${apiBaseUrl}/repos/kubernetes/minikube/releases/tags/${inputs.minikubeVersion}`,
     assetPredicate: asset =>
-      isLinux(asset.name) && isAmd64(asset.name) && !isSignature(asset.name)
+      isLinux(asset.name) && isArch(asset.name) && !isSignature(asset.name)
   });
 };
 
@@ -53,7 +58,7 @@ const installCniPlugins = async (inputs = {}) => {
     releaseUrl: `${apiBaseUrl}/repos/containernetworking/plugins/releases/tags/${tag}`,
     assetPredicate: asset =>
       isLinux(asset.name) &&
-      isAmd64(asset.name) &&
+      isArch(asset.name) &&
       !isSignature(asset.name) &&
       asset.name.indexOf('cni-plugins') === 0
   });
@@ -72,7 +77,7 @@ const installCriCtl = async (inputs = {}) => {
     releaseUrl: `${apiBaseUrl}/repos/kubernetes-sigs/cri-tools/releases/tags/${tag}`,
     assetPredicate: asset =>
       isLinux(asset.name) &&
-      isAmd64(asset.name) &&
+      isArch(asset.name) &&
       !isSignature(asset.name) &&
       asset.name.indexOf('crictl') === 0
   });
@@ -94,7 +99,7 @@ const installCriDockerd = async (inputs = {}) => {
       !isSignature(asset.name) &&
       !isWindows(asset.name) &&
       !isMac(asset.name) &&
-      isAmd64(asset.name) &&
+      isArch(asset.name) &&
       isTgz(asset.name) &&
       asset.name.indexOf('cri-dockerd') === 0
   });
