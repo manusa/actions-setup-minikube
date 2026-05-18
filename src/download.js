@@ -25,9 +25,12 @@ const firstDir = dir =>
     .map(f => f.name)[0];
 
 const assertSha256Hex = (hex, label) => {
-  if (typeof hex !== 'string' || !/^[0-9a-f]{64}$/i.test(hex)) {
+  // Lowercase only: crypto.digest('hex') and `sha256sum` both emit lowercase,
+  // so an uppercase value would assert OK and then silently fail the equality
+  // check downstream. Reject it here with an actionable message instead.
+  if (typeof hex !== 'string' || !/^[0-9a-f]{64}$/.test(hex)) {
     throw new Error(
-      `Invalid SHA256 digest for ${label}: expected 64 hex chars, got ${JSON.stringify(hex)}`
+      `Invalid SHA256 digest for ${label}: expected 64 lowercase hex chars, got ${JSON.stringify(hex)}`
     );
   }
 };
@@ -242,7 +245,8 @@ module.exports = {
   installCniPlugins,
   installCriCtl,
   installCriDockerd,
-  // Exposed for direct testing of the verification funnel:
+  /** @internal — exposed for testing the verification funnel. */
   downloadGitHubArtifact,
+  /** @internal — exposed for testing the verification funnel. */
   verifySha256File
 };
