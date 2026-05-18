@@ -1,10 +1,14 @@
 'use strict';
 
+const crypto = require('node:crypto');
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const {createHttpTestServer} = require('./test-utils/http-test-server');
 const {createTarball} = require('./test-utils/create-tarball');
+
+const sha256Hex = buffer =>
+  crypto.createHash('sha256').update(buffer).digest('hex');
 
 // Only mock system commands that require root/sudo
 jest.mock('../exec');
@@ -57,6 +61,9 @@ describe('download module', () => {
   });
 
   describe('downloadMinikube', () => {
+    const amd64Binary = Buffer.from('fake-minikube-binary');
+    const arm64Binary = Buffer.from('fake-minikube-binary-arm64');
+
     beforeEach(() => {
       testServer.get('/repos/kubernetes/minikube/releases/tags/v1.33.7', {
         assets: [
@@ -70,7 +77,7 @@ describe('download module', () => {
           },
           {
             name: 'minikube-linux-amd64.sha256',
-            browser_download_url: `${baseUrl}/download/minikube-sha256`
+            browser_download_url: `${baseUrl}/download/minikube-linux-amd64.sha256`
           },
           {
             name: 'minikube-linux-arm64',
@@ -78,15 +85,21 @@ describe('download module', () => {
           },
           {
             name: 'minikube-linux-arm64.sha256',
-            browser_download_url: `${baseUrl}/download/minikube-sha256`
+            browser_download_url: `${baseUrl}/download/minikube-linux-arm64.sha256`
           }
         ]
       });
       testServer.get('/download/minikube-linux-amd64', () => ({
-        binary: Buffer.from('fake-minikube-binary')
+        binary: amd64Binary
       }));
       testServer.get('/download/minikube-linux-arm64', () => ({
-        binary: Buffer.from('fake-minikube-binary-arm64')
+        binary: arm64Binary
+      }));
+      testServer.get('/download/minikube-linux-amd64.sha256', () => ({
+        binary: Buffer.from(`${sha256Hex(amd64Binary)}\n`)
+      }));
+      testServer.get('/download/minikube-linux-arm64.sha256', () => ({
+        binary: Buffer.from(`${sha256Hex(arm64Binary)}\n`)
       }));
     });
 
@@ -101,7 +114,11 @@ describe('download module', () => {
       await download.downloadMinikube({minikubeVersion: 'v1.33.7'});
       const downloadRequests = testServer
         .getRequests()
-        .filter(r => r.pathname.startsWith('/download/'));
+        .filter(
+          r =>
+            r.pathname.startsWith('/download/') &&
+            !r.pathname.endsWith('.sha256')
+        );
       expect(downloadRequests).toHaveLength(1);
       expect(downloadRequests[0].pathname).toBe(
         '/download/minikube-linux-amd64'
@@ -117,6 +134,15 @@ describe('download module', () => {
           })
         ])
       );
+    });
+
+    test('fetches the .sha256 companion asset', async () => {
+      await download.downloadMinikube({minikubeVersion: 'v1.33.7'});
+      expect(
+        testServer
+          .getRequests()
+          .some(r => r.pathname === '/download/minikube-linux-amd64.sha256')
+      ).toBe(true);
     });
 
     test('forwards github token', async () => {
@@ -139,7 +165,11 @@ describe('download module', () => {
         await download.downloadMinikube({minikubeVersion: 'v1.33.7'});
         const downloadRequests = testServer
           .getRequests()
-          .filter(r => r.pathname.startsWith('/download/'));
+          .filter(
+            r =>
+              r.pathname.startsWith('/download/') &&
+              !r.pathname.endsWith('.sha256')
+          );
         expect(downloadRequests).toHaveLength(1);
         expect(downloadRequests[0].pathname).toBe(
           '/download/minikube-linux-arm64'
@@ -165,6 +195,55 @@ describe('download module', () => {
         await expect(
           download.downloadMinikube({minikubeVersion: 'v0.1.0'})
         ).rejects.toThrow(/No matching arm64 asset/);
+      });
+    });
+
+    describe('with a tampered binary (sha256 mismatch)', () => {
+      let error;
+
+      beforeEach(async () => {
+        testServer.get('/download/minikube-linux-amd64.sha256', () => ({
+          binary: Buffer.from(`${'0'.repeat(64)}\n`)
+        }));
+        try {
+          await download.downloadMinikube({minikubeVersion: 'v1.33.7'});
+        } catch (e) {
+          error = e;
+        }
+      });
+
+      test('throws naming the asset', () => {
+        expect(error.message).toMatch(/SHA256 mismatch.*minikube-linux-amd64/);
+      });
+    });
+
+    describe('with no .sha256 companion asset published', () => {
+      let error;
+
+      beforeEach(async () => {
+        testServer.clearRoutes();
+        testServer.get('/repos/kubernetes/minikube/releases/tags/v1.33.7', {
+          assets: [
+            {
+              name: 'minikube-linux-amd64',
+              browser_download_url: `${baseUrl}/download/minikube-linux-amd64`
+            }
+          ]
+        });
+        testServer.get('/download/minikube-linux-amd64', () => ({
+          binary: amd64Binary
+        }));
+        try {
+          await download.downloadMinikube({minikubeVersion: 'v1.33.7'});
+        } catch (e) {
+          error = e;
+        }
+      });
+
+      test('throws indicating the missing companion', () => {
+        expect(error.message).toMatch(
+          /No .*\.sha256.* companion.*minikube-linux-amd64/
+        );
       });
     });
   });
@@ -193,6 +272,10 @@ describe('download module', () => {
               browser_download_url: `${baseUrl}/download/cni-plugins-amd64.tgz`
             },
             {
+              name: 'cni-plugins-linux-amd64-v1.9.0.tgz.sha256',
+              browser_download_url: `${baseUrl}/download/cni-plugins-amd64.tgz.sha256`
+            },
+            {
               name: 'cni-plugins-linux-amd64-v1.9.0.tgz.sha512',
               browser_download_url: `${baseUrl}/invalid`
             },
@@ -203,6 +286,10 @@ describe('download module', () => {
             {
               name: 'cni-plugins-linux-arm64-v1.9.0.tgz',
               browser_download_url: `${baseUrl}/download/cni-plugins-arm64.tgz`
+            },
+            {
+              name: 'cni-plugins-linux-arm64-v1.9.0.tgz.sha256',
+              browser_download_url: `${baseUrl}/download/cni-plugins-arm64.tgz.sha256`
             },
             {
               name: 'cni-plugins-linux-arm64-v1.9.0.tgz.sha512',
@@ -216,6 +303,16 @@ describe('download module', () => {
       }));
       testServer.get('/download/cni-plugins-arm64.tgz', () => ({
         binary: cniTarball
+      }));
+      testServer.get('/download/cni-plugins-amd64.tgz.sha256', () => ({
+        binary: Buffer.from(
+          `${sha256Hex(cniTarball)}  cni-plugins-linux-amd64-v1.9.0.tgz\n`
+        )
+      }));
+      testServer.get('/download/cni-plugins-arm64.tgz.sha256', () => ({
+        binary: Buffer.from(
+          `${sha256Hex(cniTarball)}  cni-plugins-linux-arm64-v1.9.0.tgz\n`
+        )
       }));
     });
 
@@ -246,6 +343,15 @@ describe('download module', () => {
       );
     });
 
+    test('fetches the .sha256 companion asset', async () => {
+      await download.installCniPlugins({});
+      expect(
+        testServer
+          .getRequests()
+          .some(r => r.pathname === '/download/cni-plugins-amd64.tgz.sha256')
+      ).toBe(true);
+    });
+
     test('forwards github token', async () => {
       await download.installCniPlugins({githubToken: 'secret-token'});
       const apiRequest = testServer
@@ -258,7 +364,11 @@ describe('download module', () => {
       await download.installCniPlugins({});
       const downloadRequests = testServer
         .getRequests()
-        .filter(r => r.pathname.startsWith('/download/'));
+        .filter(
+          r =>
+            r.pathname.startsWith('/download/') &&
+            !r.pathname.endsWith('.sha256')
+        );
       expect(downloadRequests).toHaveLength(1);
       expect(downloadRequests[0].pathname).toBe(
         '/download/cni-plugins-amd64.tgz'
@@ -274,10 +384,70 @@ describe('download module', () => {
         await download.installCniPlugins({});
         const downloadRequests = testServer
           .getRequests()
-          .filter(r => r.pathname.startsWith('/download/'));
+          .filter(
+            r =>
+              r.pathname.startsWith('/download/') &&
+              !r.pathname.endsWith('.sha256')
+          );
         expect(downloadRequests).toHaveLength(1);
         expect(downloadRequests[0].pathname).toBe(
           '/download/cni-plugins-arm64.tgz'
+        );
+      });
+    });
+
+    describe('with a tampered tarball (sha256 mismatch)', () => {
+      let error;
+
+      beforeEach(async () => {
+        testServer.get('/download/cni-plugins-amd64.tgz.sha256', () => ({
+          binary: Buffer.from(
+            `${'0'.repeat(64)}  cni-plugins-linux-amd64-v1.9.0.tgz\n`
+          )
+        }));
+        try {
+          await download.installCniPlugins({});
+        } catch (e) {
+          error = e;
+        }
+      });
+
+      test('throws naming the asset', () => {
+        expect(error.message).toMatch(
+          /SHA256 mismatch.*cni-plugins-linux-amd64-v1\.9\.0\.tgz/
+        );
+      });
+    });
+
+    describe('with no .sha256 companion asset published', () => {
+      let error;
+
+      beforeEach(async () => {
+        testServer.clearRoutes();
+        testServer.get(
+          '/repos/containernetworking/plugins/releases/tags/v1.9.0',
+          {
+            assets: [
+              {
+                name: 'cni-plugins-linux-amd64-v1.9.0.tgz',
+                browser_download_url: `${baseUrl}/download/cni-plugins-amd64.tgz`
+              }
+            ]
+          }
+        );
+        testServer.get('/download/cni-plugins-amd64.tgz', () => ({
+          binary: cniTarball
+        }));
+        try {
+          await download.installCniPlugins({});
+        } catch (e) {
+          error = e;
+        }
+      });
+
+      test('throws indicating the missing companion', () => {
+        expect(error.message).toMatch(
+          /No .*\.sha256.* companion.*cni-plugins-linux-amd64-v1\.9\.0\.tgz/
         );
       });
     });
@@ -302,16 +472,16 @@ describe('download module', () => {
             browser_download_url: `${baseUrl}/download/crictl-amd64.tar.gz`
           },
           {
-            name: 'crictl-linux-amd64.sha256',
-            browser_download_url: `${baseUrl}/invalid`
+            name: 'crictl-linux-amd64.tar.gz.sha256',
+            browser_download_url: `${baseUrl}/download/crictl-amd64.tar.gz.sha256`
           },
           {
             name: 'crictl-linux-arm64.tar.gz',
             browser_download_url: `${baseUrl}/download/crictl-arm64.tar.gz`
           },
           {
-            name: 'crictl-linux-arm64.sha256',
-            browser_download_url: `${baseUrl}/invalid`
+            name: 'crictl-linux-arm64.tar.gz.sha256',
+            browser_download_url: `${baseUrl}/download/crictl-arm64.tar.gz.sha256`
           }
         ]
       });
@@ -320,6 +490,16 @@ describe('download module', () => {
       }));
       testServer.get('/download/crictl-arm64.tar.gz', () => ({
         binary: crictlTarball
+      }));
+      testServer.get('/download/crictl-amd64.tar.gz.sha256', () => ({
+        binary: Buffer.from(
+          `${sha256Hex(crictlTarball)}  crictl-linux-amd64.tar.gz\n`
+        )
+      }));
+      testServer.get('/download/crictl-arm64.tar.gz.sha256', () => ({
+        binary: Buffer.from(
+          `${sha256Hex(crictlTarball)}  crictl-linux-arm64.tar.gz\n`
+        )
       }));
       // extractTar destination is /usr/local/bin (not writable without sudo)
       jest.spyOn(tc, 'extractTar').mockImplementation(async tarPath => {
@@ -359,6 +539,15 @@ describe('download module', () => {
       );
     });
 
+    test('fetches the .sha256 companion asset', async () => {
+      await download.installCriCtl({});
+      expect(
+        testServer
+          .getRequests()
+          .some(r => r.pathname === '/download/crictl-amd64.tar.gz.sha256')
+      ).toBe(true);
+    });
+
     test('forwards github token', async () => {
       await download.installCriCtl({githubToken: 'secret-token'});
       const apiRequest = testServer
@@ -371,7 +560,11 @@ describe('download module', () => {
       await download.installCriCtl({});
       const downloadRequests = testServer
         .getRequests()
-        .filter(r => r.pathname.startsWith('/download/'));
+        .filter(
+          r =>
+            r.pathname.startsWith('/download/') &&
+            !r.pathname.endsWith('.sha256')
+        );
       expect(downloadRequests).toHaveLength(1);
       expect(downloadRequests[0].pathname).toBe(
         '/download/crictl-amd64.tar.gz'
@@ -387,10 +580,68 @@ describe('download module', () => {
         await download.installCriCtl({});
         const downloadRequests = testServer
           .getRequests()
-          .filter(r => r.pathname.startsWith('/download/'));
+          .filter(
+            r =>
+              r.pathname.startsWith('/download/') &&
+              !r.pathname.endsWith('.sha256')
+          );
         expect(downloadRequests).toHaveLength(1);
         expect(downloadRequests[0].pathname).toBe(
           '/download/crictl-arm64.tar.gz'
+        );
+      });
+    });
+
+    describe('with a tampered tarball (sha256 mismatch)', () => {
+      let error;
+
+      beforeEach(async () => {
+        testServer.get('/download/crictl-amd64.tar.gz.sha256', () => ({
+          binary: Buffer.from(`${'0'.repeat(64)}  crictl-linux-amd64.tar.gz\n`)
+        }));
+        try {
+          await download.installCriCtl({});
+        } catch (e) {
+          error = e;
+        }
+      });
+
+      test('throws naming the asset', () => {
+        expect(error.message).toMatch(
+          /SHA256 mismatch.*crictl-linux-amd64\.tar\.gz/
+        );
+      });
+    });
+
+    describe('with no .sha256 companion asset published', () => {
+      let error;
+
+      beforeEach(async () => {
+        testServer.clearRoutes();
+        testServer.get(
+          '/repos/kubernetes-sigs/cri-tools/releases/tags/v1.35.0',
+          {
+            assets: [
+              {
+                name: 'crictl-linux-amd64.tar.gz',
+                browser_download_url: `${baseUrl}/download/crictl-amd64.tar.gz`
+              }
+            ]
+          }
+        );
+        testServer.get('/download/crictl-amd64.tar.gz', () => ({
+          binary: crictlTarball
+        }));
+        try {
+          await download.installCriCtl({});
+        } catch (e) {
+          error = e;
+        }
+      });
+
+      test('throws indicating the missing companion', () => {
+        expect(error.message).toMatch(
+          /No .*\.sha256.* companion.*crictl-linux-amd64\.tar\.gz/
         );
       });
     });
@@ -399,6 +650,8 @@ describe('download module', () => {
   describe('installCriDockerd', () => {
     let binaryTarball;
     let sourceTarball;
+    let binaryTarballSha;
+    let sourceTarballSha;
     // In-memory file system for /etc/ paths (not writable without sudo)
     // Content must match the tarball — both are initialized from the same constants
     let serviceFiles;
@@ -413,9 +666,25 @@ describe('download module', () => {
         'cri-dockerd-v0.3.24/packaging/systemd/cri-docker.socket':
           SOCKET_FILE_CONTENT
       });
+      binaryTarballSha = sha256Hex(binaryTarball);
+      sourceTarballSha = sha256Hex(sourceTarball);
     });
 
     beforeEach(() => {
+      jest.resetModules();
+      jest.doMock('../checksums', () => ({
+        criDockerd: {
+          tag: 'v0.3.24',
+          binarySha256: {
+            amd64: binaryTarballSha,
+            arm64: binaryTarballSha
+          },
+          sourceSha256: sourceTarballSha
+        }
+      }));
+      exec = require('../exec');
+      download = require('../download');
+      tc = require('@actions/tool-cache');
       testServer.get('/repos/Mirantis/cri-dockerd/releases/tags/v0.3.24', {
         assets: [
           {
@@ -573,6 +842,64 @@ describe('download module', () => {
           })
         ])
       );
+    });
+
+    describe('with a tampered binary tarball (sha256 mismatch)', () => {
+      let error;
+
+      beforeEach(async () => {
+        jest.resetModules();
+        jest.doMock('../checksums', () => ({
+          criDockerd: {
+            tag: 'v0.3.24',
+            binarySha256: {
+              amd64: '0'.repeat(64),
+              arm64: '0'.repeat(64)
+            },
+            sourceSha256: sourceTarballSha
+          }
+        }));
+        const tamperedDownload = require('../download');
+        try {
+          await tamperedDownload.installCriDockerd({});
+        } catch (e) {
+          error = e;
+        }
+      });
+
+      test('throws naming the asset', () => {
+        expect(error.message).toMatch(
+          /SHA256 mismatch.*cri-dockerd-0\.3\.4\.amd64\.tgz/
+        );
+      });
+    });
+
+    describe('with a tampered source tarball (sha256 mismatch)', () => {
+      let error;
+
+      beforeEach(async () => {
+        jest.resetModules();
+        jest.doMock('../checksums', () => ({
+          criDockerd: {
+            tag: 'v0.3.24',
+            binarySha256: {
+              amd64: binaryTarballSha,
+              arm64: binaryTarballSha
+            },
+            sourceSha256: '0'.repeat(64)
+          }
+        }));
+        const tamperedDownload = require('../download');
+        try {
+          await tamperedDownload.installCriDockerd({});
+        } catch (e) {
+          error = e;
+        }
+      });
+
+      test('throws naming the source archive', () => {
+        expect(error.message).toMatch(/SHA256 mismatch.*cri-dockerd source/);
+      });
     });
   });
 });

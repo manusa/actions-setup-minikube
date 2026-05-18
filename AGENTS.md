@@ -87,6 +87,19 @@ action.yml              # GitHub Action definition (outputs: `force`)
 
 These binaries are downloaded at runtime from GitHub releases. Their versions are hardcoded as `const tag = '...'` values in `src/download.js` (not in `package.json`).
 
+### SHA256 Verification
+
+Every binary downloaded by `src/download.js` is SHA256-verified before use. Verification is enforced by `downloadGitHubArtifact`, which is the single funnel for release-asset downloads — a download cannot bypass it.
+
+Two verification modes:
+
+- **`verifyWithCompanionSha256: true`** — `downloadGitHubArtifact` looks up the `<asset.name>.sha256` companion asset in the same release, fetches its body via `gitHubRequest`, parses the hex digest (first whitespace-separated token), and aborts on mismatch. Used for **minikube**, **CNI plugins**, and **crictl** — all three upstreams publish `.sha256` companions.
+- **`expectedSha256: '<hex>'`** — verifies against a pinned hex value. Used for **cri-dockerd**, whose releases do not publish any checksum companion files. Pinned values live in `src/checksums.js`.
+
+The cri-dockerd source archive (a GitHub auto-generated `archive/refs/tags/<v>.tar.gz`, not a release asset) is downloaded via `tc.downloadTool` directly and verified by calling `verifySha256File` against `checksums.criDockerd.sourceSha256`.
+
+When a verification fails, the action throws and aborts before any extraction or installation. There is no fallback path.
+
 ## Code Style
 
 ### Formatting
@@ -237,15 +250,36 @@ Architecture detection lives in `src/arch.js`, which maps `process.arch` to the 
 
 #### Binary dependency updates (CNI plugins, cri-tools, cri-dockerd)
 
-These are **not** npm packages. Their versions are hardcoded in `src/download.js` as `const tag = '...'` values, and they also have matching version strings in `src/__tests__/download.test.js`.
+These are **not** npm packages. Their versions are hardcoded in `src/download.js` as `const tag = '...'` values (or in `src/checksums.js` for cri-dockerd), and they also have matching version strings in `src/__tests__/download.test.js`.
 
 **To update a binary dependency:**
 
 1. Check the latest release on the corresponding GitHub repo
-2. Update the `const tag` value in `src/download.js`
+2. Update the `const tag` value in `src/download.js` (or `criDockerd.tag` in `src/checksums.js` for cri-dockerd)
 3. Update the matching URL in `src/__tests__/download.test.js`
-4. Run tests: `npm test`
-5. **Create a separate pull request** (not just a commit) for each binary dependency update — these changes require E2E validation via the `runner.yml` workflow to verify Minikube still starts correctly with the new versions
+4. **For cri-dockerd only**: also recompute and update the pinned SHA256 digests — see "Rotating the cri-dockerd pinned digests" below
+5. Run tests: `npm test`
+6. **Create a separate pull request** (not just a commit) for each binary dependency update — these changes require E2E validation via the `runner.yml` workflow to verify Minikube still starts correctly with the new versions
+
+#### Rotating the cri-dockerd pinned digests
+
+cri-dockerd publishes no `.sha256` companion assets, so its checksums are pinned in `src/checksums.js`. The minikube, CNI plugins, and crictl downloads consume their upstream `.sha256` companions automatically — no pinned values to maintain for those.
+
+When bumping `criDockerd.tag`, recompute all three digests:
+
+```shell
+TAG=v0.3.25  # the new tag
+curl -sLo /tmp/cri-dockerd-amd64.tgz "https://github.com/Mirantis/cri-dockerd/releases/download/${TAG}/cri-dockerd-${TAG#v}.amd64.tgz"
+curl -sLo /tmp/cri-dockerd-arm64.tgz "https://github.com/Mirantis/cri-dockerd/releases/download/${TAG}/cri-dockerd-${TAG#v}.arm64.tgz"
+curl -sLo /tmp/cri-dockerd-source.tar.gz "https://github.com/Mirantis/cri-dockerd/archive/refs/tags/${TAG}.tar.gz"
+sha256sum /tmp/cri-dockerd-amd64.tgz /tmp/cri-dockerd-arm64.tgz /tmp/cri-dockerd-source.tar.gz
+```
+
+Paste the three hex values into `criDockerd.binarySha256.amd64`, `criDockerd.binarySha256.arm64`, and `criDockerd.sourceSha256` respectively. Mismatches at runtime cause the action to abort before installing anything, so getting these wrong is loud (action fails) rather than silent.
+
+**Common mistakes to avoid:**
+- **Forgetting to update the source archive digest**: `sourceSha256` is for the GitHub auto-generated archive (`archive/refs/tags/<tag>.tar.gz`), not a release asset — easy to miss because it isn't listed under "Assets" on the release page.
+- **Bumping `tag` without updating digests**: the action will fail at the first download with `SHA256 mismatch for cri-dockerd-<v>.<arch>.tgz`.
 
 ### Releasing a New Version
 
