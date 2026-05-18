@@ -1,14 +1,11 @@
 'use strict';
 
-const crypto = require('node:crypto');
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const {createHttpTestServer} = require('./test-utils/http-test-server');
 const {createTarball} = require('./test-utils/create-tarball');
-
-const sha256Hex = buffer =>
-  crypto.createHash('sha256').update(buffer).digest('hex');
+const {sha256Hex} = require('./test-utils/sha256-hex');
 
 // Only mock system commands that require root/sudo
 jest.mock('../exec');
@@ -58,6 +55,31 @@ describe('download module', () => {
     delete process.env.GITHUB_API_URL;
     delete process.env.GITHUB_SERVER_URL;
     Object.defineProperty(process, 'arch', {value: originalArch});
+  });
+
+  describe('downloadGitHubArtifact verification guard', () => {
+    test('throws when both verifyWithCompanionSha256 and expectedSha256 are provided', async () => {
+      await expect(
+        download.downloadGitHubArtifact({
+          inputs: {},
+          releaseUrl: `${baseUrl}/some/release`,
+          assetPredicate: () => true,
+          verifyWithCompanionSha256: true,
+          expectedSha256:
+            '0000000000000000000000000000000000000000000000000000000000000000'
+        })
+      ).rejects.toThrow(/both .* were provided/);
+    });
+
+    test('throws when neither verification option is provided', async () => {
+      await expect(
+        download.downloadGitHubArtifact({
+          inputs: {},
+          releaseUrl: `${baseUrl}/some/release`,
+          assetPredicate: () => true
+        })
+      ).rejects.toThrow(/neither .* was provided/);
+    });
   });
 
   describe('downloadMinikube', () => {
@@ -244,6 +266,25 @@ describe('download module', () => {
         expect(error.message).toMatch(
           /No .*\.sha256.* companion.*minikube-linux-amd64/
         );
+      });
+    });
+
+    describe('with a malformed .sha256 companion response (empty body)', () => {
+      let error;
+
+      beforeEach(async () => {
+        testServer.get('/download/minikube-linux-amd64.sha256', () => ({
+          binary: Buffer.from('')
+        }));
+        try {
+          await download.downloadMinikube({minikubeVersion: 'v1.33.7'});
+        } catch (e) {
+          error = e;
+        }
+      });
+
+      test('throws indicating the malformed digest', () => {
+        expect(error.message).toMatch(/Invalid SHA256 digest/);
       });
     });
   });
@@ -870,6 +911,33 @@ describe('download module', () => {
       test('throws naming the asset', () => {
         expect(error.message).toMatch(
           /SHA256 mismatch.*cri-dockerd-0\.3\.4\.amd64\.tgz/
+        );
+      });
+    });
+
+    describe('with no pinned digest for the current arch', () => {
+      let error;
+
+      beforeEach(async () => {
+        jest.resetModules();
+        jest.doMock('../checksums', () => ({
+          criDockerd: {
+            tag: 'v0.3.24',
+            binarySha256: {},
+            sourceSha256: sourceTarballSha
+          }
+        }));
+        const archlessDownload = require('../download');
+        try {
+          await archlessDownload.installCriDockerd({});
+        } catch (e) {
+          error = e;
+        }
+      });
+
+      test('throws an arch-specific diagnostic', () => {
+        expect(error.message).toMatch(
+          /No pinned SHA256 for arch=.* in checksums\.criDockerd\.binarySha256/
         );
       });
     });

@@ -89,14 +89,19 @@ These binaries are downloaded at runtime from GitHub releases. Their versions ar
 
 ### SHA256 Verification
 
-Every binary downloaded by `src/download.js` is SHA256-verified before use. Verification is enforced by `downloadGitHubArtifact`, which is the single funnel for release-asset downloads — a download cannot bypass it.
+Every binary downloaded by `src/download.js` is SHA256-verified before use. Two helpers funnel all downloads — **no bare `tc.downloadTool` call should appear in this module**:
 
-Two verification modes:
+- **`downloadGitHubArtifact(...)`** — for release-asset downloads. Requires exactly one of:
+  - **`verifyWithCompanionSha256: true`** — looks up the `<asset.name>.sha256` companion asset in the same release, fetches its body via `gitHubRequest` (with `responseType: 'text'`), parses the leading hex token, validates the format with `assertSha256Hex`, and aborts on mismatch. Used for **minikube**, **CNI plugins**, and **crictl** — all three upstreams publish `.sha256` companions.
+  - **`expectedSha256: '<hex>'`** — verifies against a pinned hex value. Used for **cri-dockerd**, whose releases do not publish any checksum companion files. Pinned values live in `src/checksums.js`.
 
-- **`verifyWithCompanionSha256: true`** — `downloadGitHubArtifact` looks up the `<asset.name>.sha256` companion asset in the same release, fetches its body via `gitHubRequest`, parses the hex digest (first whitespace-separated token), and aborts on mismatch. Used for **minikube**, **CNI plugins**, and **crictl** — all three upstreams publish `.sha256` companions.
-- **`expectedSha256: '<hex>'`** — verifies against a pinned hex value. Used for **cri-dockerd**, whose releases do not publish any checksum companion files. Pinned values live in `src/checksums.js`.
+  Passing both options throws "both provided"; passing neither throws "neither provided" — the funnel is fail-loud on misuse.
 
-The cri-dockerd source archive (a GitHub auto-generated `archive/refs/tags/<v>.tar.gz`, not a release asset) is downloaded via `tc.downloadTool` directly and verified by calling `verifySha256File` against `checksums.criDockerd.sourceSha256`.
+- **`downloadVerifiedUrl({url, expectedSha256, label})`** — for direct-URL downloads that aren't release assets (e.g. the cri-dockerd source archive at `github.com/<repo>/archive/refs/tags/<v>.tar.gz`). Pairs `tc.downloadTool` with `verifySha256File` so download and verification cannot drift apart.
+
+When `installCriDockerd` runs on an arch with no pinned digest in `checksums.criDockerd.binarySha256`, it throws an arch-specific error before reaching the funnel ("No pinned SHA256 for arch=…") — adding a new arch to `src/arch.js` without updating `src/checksums.js` fails fast with a self-diagnosing message.
+
+`verifySha256File` and the parser both call `assertSha256Hex` to reject non-hex / wrong-length inputs early, so a malformed companion response or a typo in `checksums.js` surfaces as "Invalid SHA256 digest" rather than a generic mismatch.
 
 When a verification fails, the action throws and aborts before any extraction or installation. There is no fallback path.
 
