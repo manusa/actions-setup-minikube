@@ -6,7 +6,7 @@ This file provides guidance to AI coding agents (GitHub Copilot, Claude Code, et
 
 ## Project Overview
 
-A GitHub Action that sets up a single-node Kubernetes cluster using Minikube in CI workflows. It downloads and installs Minikube with specified versions of Kubernetes, supporting multiple drivers (`none`, `docker`) and container runtimes (`docker`, `cri-o`, `containerd`). Built with Node.js 20 using GitHub Actions toolkit libraries.
+A GitHub Action that sets up a single-node Kubernetes cluster using Minikube in CI workflows. It downloads and installs Minikube with specified versions of Kubernetes, supporting multiple drivers (`none`, `docker`) and container runtimes (`docker`, `cri-o`, `containerd`). Built with Node.js 24 using GitHub Actions toolkit libraries.
 
 ## Working Effectively
 

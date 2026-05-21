@@ -23,5 +23,5 @@ outputs:
   force:
     description: 'Set to true when --force was added to minikube start because the requested Kubernetes version is not in Minikube built-in supported list'
 runs:
-  using: 'node20'
+  using: 'node24'
   main: 'src/index.js'

@@ -2,14 +2,14 @@
 
 ## Overview
 
-This project is a GitHub Action that sets up Minikube in CI workflows. It is built with Node.js 20 using ES Modules and the GitHub Actions toolkit libraries. Source files and production `node_modules/` are committed directly to the repository — there is no build step or bundler.
+This project is a GitHub Action that sets up Minikube in CI workflows. It is built with Node.js 24 using ES Modules and the GitHub Actions toolkit libraries. Source files and production `node_modules/` are committed directly to the repository — there is no build step or bundler.
 
 ## Execution Model
 
 ```
-GitHub Actions Runner (Node.js 20)
+GitHub Actions Runner (Node.js 24)
   │
-  ├── action.yml          ─── using: 'node20', main: 'src/index.js'
+  ├── action.yml          ─── using: 'node24', main: 'src/index.js'
   │
   ├── src/                ─── Source files (executed directly, no transpilation)
   │   ├── index.js        ─── Entry point, orchestrates the pipeline
