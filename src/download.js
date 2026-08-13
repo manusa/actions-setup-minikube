@@ -4,6 +4,7 @@ const core = require('@actions/core');
 const tc = require('@actions/tool-cache');
 const crypto = require('node:crypto');
 const fs = require('node:fs');
+const path = require('node:path');
 const {logExecSync} = require('./exec');
 const {gitHubRequest, apiBaseUrl, serverBaseUrl} = require('./github');
 const {arch} = require('./arch');
@@ -72,7 +73,10 @@ const downloadGitHubArtifact = async ({
   releaseUrl,
   assetPredicate,
   verifyWithCompanionSha256 = false,
-  expectedSha256
+  expectedSha256,
+  toolName,
+  toolVersion,
+  cacheFileName
 }) => {
   if (verifyWithCompanionSha256 && expectedSha256) {
     throw new Error(
@@ -83,6 +87,16 @@ const downloadGitHubArtifact = async ({
     throw new Error(
       'downloadGitHubArtifact: neither `verifyWithCompanionSha256` nor `expectedSha256` was provided; one is required to verify the download.'
     );
+  }
+  if (!toolName || !toolVersion || !cacheFileName) {
+    throw new Error(
+      'downloadGitHubArtifact: `toolName`, `toolVersion`, and `cacheFileName` are all required to check/populate the tool-cache.'
+    );
+  }
+  const cachedDir = tc.find(toolName, toolVersion, arch());
+  if (cachedDir) {
+    core.info(`Using cached ${toolName} ${toolVersion} (${arch()})`);
+    return path.join(cachedDir, cacheFileName);
   }
   const tagInfo = await gitHubRequest({
     url: releaseUrl,
@@ -106,6 +120,13 @@ const downloadGitHubArtifact = async ({
   } else {
     await verifySha256File(downloadedFile, expectedSha256, asset.name);
   }
+  await tc.cacheFile(
+    downloadedFile,
+    cacheFileName,
+    toolName,
+    toolVersion,
+    arch()
+  );
   return downloadedFile;
 };
 
@@ -126,7 +147,10 @@ const downloadMinikube = async (inputs = {}) => {
     releaseUrl: `${apiBaseUrl}/repos/kubernetes/minikube/releases/tags/${inputs.minikubeVersion}`,
     assetPredicate: asset =>
       isLinux(asset.name) && isArch(asset.name) && !isSignature(asset.name),
-    verifyWithCompanionSha256: true
+    verifyWithCompanionSha256: true,
+    toolName: 'minikube',
+    toolVersion: inputs.minikubeVersion,
+    cacheFileName: 'minikube'
   });
 };
 
@@ -144,7 +168,10 @@ const installCniPlugins = async (inputs = {}) => {
       isArch(asset.name) &&
       !isSignature(asset.name) &&
       asset.name.indexOf('cni-plugins') === 0,
-    verifyWithCompanionSha256: true
+    verifyWithCompanionSha256: true,
+    toolName: 'cni-plugins',
+    toolVersion: tag,
+    cacheFileName: 'cni-plugins.tgz'
   });
   const extractedTarDir = await tc.extractTar(tar);
   const cniBinDirPath = '/opt/cni/bin';
@@ -164,7 +191,10 @@ const installCriCtl = async (inputs = {}) => {
       isArch(asset.name) &&
       !isSignature(asset.name) &&
       asset.name.indexOf('crictl') === 0,
-    verifyWithCompanionSha256: true
+    verifyWithCompanionSha256: true,
+    toolName: 'crictl',
+    toolVersion: tag,
+    cacheFileName: 'crictl.tar.gz'
   });
   await tc.extractTar(tar, '/usr/local/bin');
 };
@@ -191,7 +221,10 @@ const installCriDockerd = async (inputs = {}) => {
       isArch(asset.name) &&
       isTgz(asset.name) &&
       asset.name.indexOf('cri-dockerd') === 0,
-    expectedSha256: expectedBinarySha256
+    expectedSha256: expectedBinarySha256,
+    toolName: 'cri-dockerd',
+    toolVersion: tag,
+    cacheFileName: 'cri-dockerd.tgz'
   });
   // Binary
   const binaryDir = await tc.extractTar(binaryTar);
