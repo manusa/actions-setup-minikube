@@ -101,6 +101,19 @@ describe('download module', () => {
     });
   });
 
+  describe('downloadVerifiedUrl tool-cache guard', () => {
+    test('throws when toolName, toolVersion, or cacheFileName are missing', async () => {
+      await expect(
+        download.downloadVerifiedUrl({
+          url: `${baseUrl}/some/archive.tar.gz`,
+          expectedSha256:
+            '0000000000000000000000000000000000000000000000000000000000000000',
+          label: 'some archive'
+        })
+      ).rejects.toThrow(/toolName.*toolVersion.*cacheFileName/);
+    });
+  });
+
   describe('downloadMinikube', () => {
     const amd64Binary = Buffer.from('fake-minikube-binary');
     const arm64Binary = Buffer.from('fake-minikube-binary-arm64');
@@ -1080,6 +1093,11 @@ describe('download module', () => {
         expect(tc.find('cri-dockerd', 'v0.3.24', arch())).not.toBe('');
       });
 
+      test('caches the downloaded source archive for reuse', async () => {
+        await download.installCriDockerd({});
+        expect(tc.find('cri-dockerd-source', 'v0.3.24', arch())).not.toBe('');
+      });
+
       describe('when the binary tarball is already cached', () => {
         beforeEach(async () => {
           const seedFile = path.join(tmpDir, 'seed-cri-dockerd.tgz');
@@ -1111,6 +1129,41 @@ describe('download module', () => {
                   r.pathname ===
                   '/Mirantis/cri-dockerd/archive/refs/tags/v0.3.24.tar.gz'
               )
+          ).toBe(true);
+        });
+      });
+
+      describe('when the source archive is already cached', () => {
+        beforeEach(async () => {
+          const seedFile = path.join(tmpDir, 'seed-cri-dockerd-source.tar.gz');
+          fs.writeFileSync(seedFile, sourceTarball);
+          await tc.cacheFile(
+            seedFile,
+            'cri-dockerd-source.tar.gz',
+            'cri-dockerd-source',
+            'v0.3.24',
+            arch()
+          );
+          await download.installCriDockerd({});
+        });
+
+        test('does not download the source archive', () => {
+          expect(
+            testServer
+              .getRequests()
+              .some(
+                r =>
+                  r.pathname ===
+                  '/Mirantis/cri-dockerd/archive/refs/tags/v0.3.24.tar.gz'
+              )
+          ).toBe(false);
+        });
+
+        test('still downloads the binary tarball', () => {
+          expect(
+            testServer
+              .getRequests()
+              .some(r => r.pathname === '/download/cri-dockerd-amd64.tgz')
           ).toBe(true);
         });
       });

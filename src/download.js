@@ -133,10 +133,34 @@ const downloadGitHubArtifact = async ({
 // Paired download + verify for URLs that aren't release assets (e.g. GitHub
 // auto-generated source archives). Keeps verification inseparable from the
 // download so a future contributor can't add a bare tc.downloadTool call.
-const downloadVerifiedUrl = async ({url, expectedSha256, label}) => {
+const downloadVerifiedUrl = async ({
+  url,
+  expectedSha256,
+  label,
+  toolName,
+  toolVersion,
+  cacheFileName
+}) => {
+  if (!toolName || !toolVersion || !cacheFileName) {
+    throw new Error(
+      'downloadVerifiedUrl: `toolName`, `toolVersion`, and `cacheFileName` are all required to check/populate the tool-cache.'
+    );
+  }
+  const cachedDir = tc.find(toolName, toolVersion, arch());
+  if (cachedDir) {
+    core.info(`Using cached ${toolName} ${toolVersion} (${arch()})`);
+    return path.join(cachedDir, cacheFileName);
+  }
   core.info(`Downloading from: ${url}`);
   const downloadedFile = await tc.downloadTool(url);
   await verifySha256File(downloadedFile, expectedSha256, label);
+  await tc.cacheFile(
+    downloadedFile,
+    cacheFileName,
+    toolName,
+    toolVersion,
+    arch()
+  );
   return downloadedFile;
 };
 
@@ -237,7 +261,10 @@ const installCriDockerd = async (inputs = {}) => {
   const sourceTar = await downloadVerifiedUrl({
     url: `${serverBaseUrl}/Mirantis/cri-dockerd/archive/refs/tags/${tag}.tar.gz`,
     expectedSha256: sourceSha256,
-    label: 'cri-dockerd source archive'
+    label: 'cri-dockerd source archive',
+    toolName: 'cri-dockerd-source',
+    toolVersion: tag,
+    cacheFileName: 'cri-dockerd-source.tar.gz'
   });
   const sourceDir = await tc.extractTar(sourceTar);
   const sourceContent = firstDir(sourceDir);
@@ -280,6 +307,8 @@ module.exports = {
   installCriDockerd,
   /** @internal — exposed for testing the verification funnel. */
   downloadGitHubArtifact,
+  /** @internal — exposed for testing the verification funnel. */
+  downloadVerifiedUrl,
   /** @internal — exposed for testing the verification funnel. */
   verifySha256File
 };
