@@ -2,6 +2,7 @@
 
 const core = require('@actions/core');
 const tc = require('@actions/tool-cache');
+const io = require('@actions/io');
 const crypto = require('node:crypto');
 const fs = require('node:fs');
 const path = require('node:path');
@@ -68,6 +69,23 @@ const fetchCompanionSha256 = async ({asset, assets, inputs}) => {
   return parsed;
 };
 
+// Callers mutate/relocate the returned file in place (e.g. install.js moves
+// the minikube binary via io.mv). Returning the live tool-cache path directly
+// would let that mutation touch the persisted cache entry -- and if the
+// destination happens to land back inside the same tool-cache directory
+// (as it does for minikube), io.mv's remove-then-rename turns into a
+// self-inflicted ENOENT. Copy to a disposable temp file instead so a cache
+// hit behaves exactly like a fresh download from the caller's perspective.
+const copyFromToolCache = async (cachedDir, cacheFileName) => {
+  const cachedFile = path.join(cachedDir, cacheFileName);
+  const tempFile = path.join(
+    process.env.RUNNER_TEMP,
+    `${crypto.randomUUID()}-${cacheFileName}`
+  );
+  await io.cp(cachedFile, tempFile);
+  return tempFile;
+};
+
 const downloadGitHubArtifact = async ({
   inputs,
   releaseUrl,
@@ -96,7 +114,7 @@ const downloadGitHubArtifact = async ({
   const cachedDir = tc.find(toolName, toolVersion, arch());
   if (cachedDir) {
     core.info(`Using cached ${toolName} ${toolVersion} (${arch()})`);
-    return path.join(cachedDir, cacheFileName);
+    return copyFromToolCache(cachedDir, cacheFileName);
   }
   const tagInfo = await gitHubRequest({
     url: releaseUrl,
@@ -149,7 +167,7 @@ const downloadVerifiedUrl = async ({
   const cachedDir = tc.find(toolName, toolVersion, arch());
   if (cachedDir) {
     core.info(`Using cached ${toolName} ${toolVersion} (${arch()})`);
-    return path.join(cachedDir, cacheFileName);
+    return copyFromToolCache(cachedDir, cacheFileName);
   }
   core.info(`Downloading from: ${url}`);
   const downloadedFile = await tc.downloadTool(url);

@@ -351,6 +351,18 @@ describe('download module', () => {
         test('returns the cached file', () => {
           expect(fs.readFileSync(filePath)).toEqual(amd64Binary);
         });
+
+        test('returns a disposable copy outside the tool-cache directory', () => {
+          // install.js moves/renames the returned file in place (e.g. into
+          // the minikube home directory). Returning the live tool-cache path
+          // directly would let that mutate the persisted cache entry, and if
+          // the destination directory happens to resolve back to the same
+          // tool-cache path (as it does for minikube -- see the ENOENT
+          // self-rename this regression test guards against), the move fails.
+          expect(filePath.startsWith(process.env.RUNNER_TOOL_CACHE)).toBe(
+            false
+          );
+        });
       });
     });
   });
