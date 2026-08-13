@@ -582,6 +582,20 @@ describe('download module', () => {
         test('does not hit the network', () => {
           expect(testServer.getRequests()).toHaveLength(0);
         });
+
+        test('still extracts plugin binaries from the cached tarball', () => {
+          const installCmd = exec.logExecSync.mock.calls[0][0];
+          const extractedDir = installCmd.match(/sudo find (\S+)/)[1];
+          expect(fs.readdirSync(extractedDir)).toEqual(
+            expect.arrayContaining(['bridge', 'loopback'])
+          );
+        });
+
+        test('still installs to /opt/cni/bin', () => {
+          expect(exec.logExecSync).toHaveBeenCalledWith(
+            expect.stringMatching(/install -Dm 0755 .+\/opt\/cni\/bin/)
+          );
+        });
       });
     });
   });
@@ -801,6 +815,13 @@ describe('download module', () => {
 
         test('does not hit the network', () => {
           expect(testServer.getRequests()).toHaveLength(0);
+        });
+
+        test('still extracts the cached tarball to /usr/local/bin', () => {
+          expect(tc.extractTar).toHaveBeenCalledWith(
+            expect.any(String),
+            '/usr/local/bin'
+          );
         });
       });
     });
@@ -1131,6 +1152,21 @@ describe('download module', () => {
               )
           ).toBe(true);
         });
+
+        test('still installs the binary from the cached tarball', () => {
+          const installCall = exec.logExecSync.mock.calls.find(([cmd]) =>
+            cmd.includes('install -m 0755')
+          );
+          expect(installCall[0]).toMatch(
+            /\/cri-dockerd\/cri-dockerd \/usr\/local\/bin\//
+          );
+        });
+
+        test('still enables and starts the systemd service', () => {
+          expect(exec.logExecSync).toHaveBeenCalledWith(
+            'sudo systemctl enable --now cri-docker.socket'
+          );
+        });
       });
 
       describe('when the source archive is already cached', () => {
@@ -1165,6 +1201,17 @@ describe('download module', () => {
               .getRequests()
               .some(r => r.pathname === '/download/cri-dockerd-amd64.tgz')
           ).toBe(true);
+        });
+
+        test('still updates the service file from the cached source archive', () => {
+          const content =
+            serviceFiles['/etc/systemd/system/cri-docker.service'];
+          expect(content).toContain('--network-plugin=cni');
+        });
+
+        test('still replaces the socket path from the cached source archive', () => {
+          const content = serviceFiles['/etc/systemd/system/cri-docker.socket'];
+          expect(content).toBe('ListenStream=/var/run/cri-dockerd.sock');
         });
       });
     });
