@@ -20,6 +20,7 @@ describe('download module', () => {
   let download;
   let tc;
   let exec;
+  let arch;
   let tmpDir;
   let originalArch;
 
@@ -37,6 +38,9 @@ describe('download module', () => {
     jest.resetModules();
     tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'download-test-'));
     process.env.RUNNER_TEMP = tmpDir;
+    process.env.RUNNER_TOOL_CACHE = fs.mkdtempSync(
+      path.join(os.tmpdir(), 'download-test-tool-cache-')
+    );
     process.env.GITHUB_API_URL = baseUrl;
     process.env.GITHUB_SERVER_URL = baseUrl;
     originalArch = process.arch;
@@ -44,6 +48,7 @@ describe('download module', () => {
     exec = require('../exec');
     download = require('../download');
     tc = require('@actions/tool-cache');
+    ({arch} = require('../arch'));
 
     testServer.clearRoutes();
     testServer.clearRequests();
@@ -51,7 +56,9 @@ describe('download module', () => {
 
   afterEach(() => {
     fs.rmSync(tmpDir, {recursive: true, force: true});
+    fs.rmSync(process.env.RUNNER_TOOL_CACHE, {recursive: true, force: true});
     delete process.env.RUNNER_TEMP;
+    delete process.env.RUNNER_TOOL_CACHE;
     delete process.env.GITHUB_API_URL;
     delete process.env.GITHUB_SERVER_URL;
     Object.defineProperty(process, 'arch', {value: originalArch});
@@ -79,6 +86,31 @@ describe('download module', () => {
           assetPredicate: () => true
         })
       ).rejects.toThrow(/neither .* was provided/);
+    });
+
+    test('throws when toolName, toolVersion, or cacheFileName are missing', async () => {
+      await expect(
+        download.downloadGitHubArtifact({
+          inputs: {},
+          releaseUrl: `${baseUrl}/some/release`,
+          assetPredicate: () => true,
+          expectedSha256:
+            '0000000000000000000000000000000000000000000000000000000000000000'
+        })
+      ).rejects.toThrow(/toolName.*toolVersion.*cacheFileName/);
+    });
+  });
+
+  describe('downloadVerifiedUrl tool-cache guard', () => {
+    test('throws when toolName, toolVersion, or cacheFileName are missing', async () => {
+      await expect(
+        download.downloadVerifiedUrl({
+          url: `${baseUrl}/some/archive.tar.gz`,
+          expectedSha256:
+            '0000000000000000000000000000000000000000000000000000000000000000',
+          label: 'some archive'
+        })
+      ).rejects.toThrow(/toolName.*toolVersion.*cacheFileName/);
     });
   });
 
@@ -287,6 +319,52 @@ describe('download module', () => {
         expect(error.message).toMatch(/Invalid SHA256 digest/);
       });
     });
+
+    describe('tool-cache', () => {
+      test('caches the downloaded binary for reuse', async () => {
+        await download.downloadMinikube({minikubeVersion: 'v1.33.7'});
+        expect(tc.find('minikube', 'v1.33.7', arch())).not.toBe('');
+      });
+
+      describe('when already cached', () => {
+        let filePath;
+
+        beforeEach(async () => {
+          const seedFile = path.join(tmpDir, 'seed-minikube');
+          fs.writeFileSync(seedFile, amd64Binary);
+          await tc.cacheFile(
+            seedFile,
+            'minikube',
+            'minikube',
+            'v1.33.7',
+            arch()
+          );
+          filePath = await download.downloadMinikube({
+            minikubeVersion: 'v1.33.7'
+          });
+        });
+
+        test('does not hit the network', () => {
+          expect(testServer.getRequests()).toHaveLength(0);
+        });
+
+        test('returns the cached file', () => {
+          expect(fs.readFileSync(filePath)).toEqual(amd64Binary);
+        });
+
+        test('returns a disposable copy outside the tool-cache directory', () => {
+          // install.js moves/renames the returned file in place (e.g. into
+          // the minikube home directory). Returning the live tool-cache path
+          // directly would let that mutate the persisted cache entry, and if
+          // the destination directory happens to resolve back to the same
+          // tool-cache path (as it does for minikube -- see the ENOENT
+          // self-rename this regression test guards against), the move fails.
+          expect(filePath.startsWith(process.env.RUNNER_TOOL_CACHE)).toBe(
+            false
+          );
+        });
+      });
+    });
   });
 
   describe('installCniPlugins', () => {
@@ -492,6 +570,46 @@ describe('download module', () => {
         );
       });
     });
+
+    describe('tool-cache', () => {
+      test('caches the downloaded tarball for reuse', async () => {
+        await download.installCniPlugins({});
+        expect(tc.find('cni-plugins', 'v1.9.0', arch())).not.toBe('');
+      });
+
+      describe('when already cached', () => {
+        beforeEach(async () => {
+          const seedFile = path.join(tmpDir, 'seed-cni-plugins.tgz');
+          fs.writeFileSync(seedFile, cniTarball);
+          await tc.cacheFile(
+            seedFile,
+            'cni-plugins.tgz',
+            'cni-plugins',
+            'v1.9.0',
+            arch()
+          );
+          await download.installCniPlugins({});
+        });
+
+        test('does not hit the network', () => {
+          expect(testServer.getRequests()).toHaveLength(0);
+        });
+
+        test('still extracts plugin binaries from the cached tarball', () => {
+          const installCmd = exec.logExecSync.mock.calls[0][0];
+          const extractedDir = installCmd.match(/sudo find (\S+)/)[1];
+          expect(fs.readdirSync(extractedDir)).toEqual(
+            expect.arrayContaining(['bridge', 'loopback'])
+          );
+        });
+
+        test('still installs to /opt/cni/bin', () => {
+          expect(exec.logExecSync).toHaveBeenCalledWith(
+            expect.stringMatching(/install -Dm 0755 .+\/opt\/cni\/bin/)
+          );
+        });
+      });
+    });
   });
 
   describe('installCriCtl', () => {
@@ -686,6 +804,39 @@ describe('download module', () => {
         );
       });
     });
+
+    describe('tool-cache', () => {
+      test('caches the downloaded tarball for reuse', async () => {
+        await download.installCriCtl({});
+        expect(tc.find('crictl', 'v1.35.0', arch())).not.toBe('');
+      });
+
+      describe('when already cached', () => {
+        beforeEach(async () => {
+          const seedFile = path.join(tmpDir, 'seed-crictl.tar.gz');
+          fs.writeFileSync(seedFile, crictlTarball);
+          await tc.cacheFile(
+            seedFile,
+            'crictl.tar.gz',
+            'crictl',
+            'v1.35.0',
+            arch()
+          );
+          await download.installCriCtl({});
+        });
+
+        test('does not hit the network', () => {
+          expect(testServer.getRequests()).toHaveLength(0);
+        });
+
+        test('still extracts the cached tarball to /usr/local/bin', () => {
+          expect(tc.extractTar).toHaveBeenCalledWith(
+            expect.any(String),
+            '/usr/local/bin'
+          );
+        });
+      });
+    });
   });
 
   describe('installCriDockerd', () => {
@@ -766,6 +917,7 @@ describe('download module', () => {
         '/etc/systemd/system/cri-docker.socket': SOCKET_FILE_CONTENT
       };
       const originalReadFileSync = fs.readFileSync.bind(fs);
+      const originalWriteFileSync = fs.writeFileSync.bind(fs);
       jest.spyOn(fs, 'readFileSync').mockImplementation((filePath, ...args) => {
         if (serviceFiles[filePath] !== undefined) {
           return serviceFiles[filePath];
@@ -779,9 +931,7 @@ describe('download module', () => {
             serviceFiles[filePath] = content;
             return;
           }
-          return jest
-            .requireActual('fs')
-            .writeFileSync(filePath, content, ...args);
+          return originalWriteFileSync(filePath, content, ...args);
         });
     });
 
@@ -967,6 +1117,114 @@ describe('download module', () => {
 
       test('throws naming the source archive', () => {
         expect(error.message).toMatch(/SHA256 mismatch.*cri-dockerd source/);
+      });
+    });
+
+    describe('tool-cache', () => {
+      test('caches the downloaded binary tarball for reuse', async () => {
+        await download.installCriDockerd({});
+        expect(tc.find('cri-dockerd', 'v0.3.24', arch())).not.toBe('');
+      });
+
+      test('caches the downloaded source archive for reuse', async () => {
+        await download.installCriDockerd({});
+        expect(tc.find('cri-dockerd-source', 'v0.3.24', arch())).not.toBe('');
+      });
+
+      describe('when the binary tarball is already cached', () => {
+        beforeEach(async () => {
+          const seedFile = path.join(tmpDir, 'seed-cri-dockerd.tgz');
+          fs.writeFileSync(seedFile, binaryTarball);
+          await tc.cacheFile(
+            seedFile,
+            'cri-dockerd.tgz',
+            'cri-dockerd',
+            'v0.3.24',
+            arch()
+          );
+          await download.installCriDockerd({});
+        });
+
+        test('does not download the binary tarball', () => {
+          expect(
+            testServer
+              .getRequests()
+              .some(r => r.pathname === '/download/cri-dockerd-amd64.tgz')
+          ).toBe(false);
+        });
+
+        test('still downloads the source archive', () => {
+          expect(
+            testServer
+              .getRequests()
+              .some(
+                r =>
+                  r.pathname ===
+                  '/Mirantis/cri-dockerd/archive/refs/tags/v0.3.24.tar.gz'
+              )
+          ).toBe(true);
+        });
+
+        test('still installs the binary from the cached tarball', () => {
+          const installCall = exec.logExecSync.mock.calls.find(([cmd]) =>
+            cmd.includes('install -m 0755')
+          );
+          expect(installCall[0]).toMatch(
+            /\/cri-dockerd\/cri-dockerd \/usr\/local\/bin\//
+          );
+        });
+
+        test('still enables and starts the systemd service', () => {
+          expect(exec.logExecSync).toHaveBeenCalledWith(
+            'sudo systemctl enable --now cri-docker.socket'
+          );
+        });
+      });
+
+      describe('when the source archive is already cached', () => {
+        beforeEach(async () => {
+          const seedFile = path.join(tmpDir, 'seed-cri-dockerd-source.tar.gz');
+          fs.writeFileSync(seedFile, sourceTarball);
+          await tc.cacheFile(
+            seedFile,
+            'cri-dockerd-source.tar.gz',
+            'cri-dockerd-source',
+            'v0.3.24',
+            arch()
+          );
+          await download.installCriDockerd({});
+        });
+
+        test('does not download the source archive', () => {
+          expect(
+            testServer
+              .getRequests()
+              .some(
+                r =>
+                  r.pathname ===
+                  '/Mirantis/cri-dockerd/archive/refs/tags/v0.3.24.tar.gz'
+              )
+          ).toBe(false);
+        });
+
+        test('still downloads the binary tarball', () => {
+          expect(
+            testServer
+              .getRequests()
+              .some(r => r.pathname === '/download/cri-dockerd-amd64.tgz')
+          ).toBe(true);
+        });
+
+        test('still updates the service file from the cached source archive', () => {
+          const content =
+            serviceFiles['/etc/systemd/system/cri-docker.service'];
+          expect(content).toContain('--network-plugin=cni');
+        });
+
+        test('still replaces the socket path from the cached source archive', () => {
+          const content = serviceFiles['/etc/systemd/system/cri-docker.socket'];
+          expect(content).toBe('ListenStream=/var/run/cri-dockerd.sock');
+        });
       });
     });
   });

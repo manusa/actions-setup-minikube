@@ -65,8 +65,14 @@ Each step is a separate module with a single responsibility:
 | `src/check-environment.js` | Validates Ubuntu version (18, 20, 22, 24) |
 | `src/load-inputs.js` | Loads action inputs via `@actions/core` |
 | `src/configure-environment.js` | Prepares system (apt packages, Docker, CNI plugins) |
-| `src/download.js` | Downloads binaries from GitHub releases |
+| `src/download.js` | Checks tool-cache, downloads+verifies+caches on miss |
 | `src/install.js` | Installs and starts Minikube |
+
+### Tool-Cache Lookup
+
+`src/download.js` checks `@actions/tool-cache`'s `tc.find(toolName, toolVersion, arch)` before downloading minikube, CNI plugins, crictl, or the cri-dockerd binary and source archive. On a hit, it returns the cached file and skips the network call and SHA256 verification (a runner-local cache entry was already verified when it was written). On a miss, it downloads, verifies, and calls `tc.cacheFile()` to populate the cache before returning. Extraction and install steps (`tc.extractTar`, `sudo install`, `systemctl`) always run afterward regardless of hit or miss, since CNI plugins/crictl/cri-dockerd install to system paths outside the tool-cache and those steps are idempotent.
+
+This only populates `RUNNER_TOOL_CACHE` for the lifetime of a single runner. A consuming workflow that wants the cache to persist across separate job runs restores/saves `RUNNER_TOOL_CACHE` with `actions/cache` around this action's step.
 
 ### Supporting Modules
 
