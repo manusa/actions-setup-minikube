@@ -52,6 +52,7 @@ src/
   download.js           # Downloads binaries from GitHub releases (Minikube, CNI plugins, crictl, cri-dockerd)
   error-handler.js      # Global error handling
   exec.js               # Shell command execution utilities
+  shell-quote.js        # shellQuote: quotes action-controlled values (paths) for shell commands
   github.js             # GitHub API request utility (authenticated/unauthenticated)
   install.js            # Installs and starts Minikube
   load-inputs.js        # Loads action inputs via @actions/core
@@ -66,6 +67,7 @@ action.yml              # GitHub Action definition (outputs: `force`)
 ### Design Patterns
 
 - **Modular pipeline**: `index.js` orchestrates: `checkEnvironment()` → `loadInputs()` → `configureEnvironment(inputs)` → `download.downloadMinikube(inputs)` → `install(downloadedFile, inputs)`. Note: binary downloads for CNI plugins, crictl, and cri-dockerd happen inside `configureEnvironment()`, not as a separate pipeline step.
+- **Shell commands**: Commands run through `/bin/sh` (`src/exec.js`). Wrap action-controlled values (temp/tool-cache paths) and validated inputs (`kubernetes version`) in `shellQuote` from `src/shell-quote.js`. The `start args`, `driver` and `container runtime` inputs are appended as-is on purpose: existing workflows may rely on the shell evaluating them (word splitting, quotes, `$VAR` expansion). Never quote, parse or validate them unless every value users pass today provably keeps working; otherwise it breaks user pipelines.
 - **GitHub Actions toolkit**: Uses `@actions/core` for inputs/outputs, `@actions/tool-cache` for downloads
 - **GitHub API integration**: `src/github.js` provides a `gitHubRequest` utility wrapping Axios for authenticated/unauthenticated GitHub API calls. Used by `download.js` and `check-kubernetes-version.js`.
 - **Driver-specific logic**: Different setup paths for `none` vs `docker` drivers (none requires CNI plugins, crictl, cri-dockerd). The `none` driver runs `minikube start` as root with the runner's environment (`HOME` and `MINIKUBE_HOME` must survive, or minikube writes its config under `/root`). sudo-rs, Ubuntu's default sudo since 25.10, ignores `sudo -E`, so `src/install.js` uses classic sudo (`/usr/bin/sudo.ws -E`) when it is installed and a non-interactive probe (`sudo.ws -n -E true`) succeeds, and otherwise falls back to `sudo -E --preserve-env=HOME,MINIKUBE_HOME`. That fallback forwards the whole environment on classic sudo but only those two variables on sudo-rs, so on sudo-rs-only hosts `KUBECONFIG`, proxy and `MINIKUBE_*` variables do not reach minikube. Never add secrets to that `--preserve-env` list, or replace `-E` with a full list of variable names: classic sudo writes the values of explicitly preserved variables to syslog, and an explicit list bypasses sudo's filtering of unsafe variables such as `BASH_ENV`.
@@ -297,7 +299,7 @@ Releases use lightweight tags and a commit message format of `[RELEASE] Release 
 **Follow this exact sequence:**
 
 1. Bump the version in `package.json`
-2. Update the action reference in `README.md` (e.g., `manusa/actions-setup-minikube@v2.16.0` → `@v2.16.1`)
+2. Update every action reference in `README.md` (e.g., `manusa/actions-setup-minikube@v2.16.0` → `@v2.16.1`); there are two, in the Basic usage example and the `start args` example
 3. Regenerate `package-lock.json`: `npm install --ignore-scripts --package-lock-only`
 4. **Prune devDependencies** so `node_modules/.package-lock.json` only contains the version bump (not dev deps): `npm prune --omit=dev --ignore-scripts`
 5. Stage all 4 files: `git add package.json package-lock.json node_modules/.package-lock.json README.md`
