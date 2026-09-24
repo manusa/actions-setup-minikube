@@ -199,6 +199,73 @@ jobs:
         run: kubectl get nodes
       - name: Validate container runtime (${{ matrix.container_runtime }})
         run: 'cat "$MINIKUBE_HOME/.minikube/machines/minikube/config.json" | jq ".Driver.NodeConfig.ContainerRuntime" | grep "${{ matrix.container_runtime }}"'
+  # Many workflows pick the runtime through start args instead of the
+  # container runtime input. The action's docker default goes before the start
+  # args, so theirs must win. cri-o is neither the action's nor Minikube's
+  # default, so the node only runs it if the start args won.
+  container-runtime-start-args:
+    name: Container runtime in start args
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, ubuntu-24.04-arm]
+        container_runtime: [containerd, cri-o]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Setup Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+      - name: Test Action
+        uses: ./
+        with:
+          minikube version: v1.39.0
+          kubernetes version: v1.37.1
+          github token: ${{ secrets.GITHUB_TOKEN }}
+          driver: docker
+          start args: '--container-runtime=${{ matrix.container_runtime }}'
+      - name: Validate Minikube
+        run: minikube status | grep Running
+      - name: Validate Cluster
+        run: kubectl get nodes
+      - name: Validate container runtime (${{ matrix.container_runtime }})
+        run: kubectl get nodes -o jsonpath='{.items[0].status.nodeInfo.containerRuntimeVersion}' | grep '^${{ matrix.container_runtime }}://'
+      # minikube's audit log records the start arguments in order
+      - name: Validate start args came after the docker default
+        run: jq -r 'select(.data.command == "start") | .data.args' "$MINIKUBE_HOME/.minikube/logs/audit.json" | grep -- '--container-runtime=docker .*--container-runtime=${{ matrix.container_runtime }}'
+  # A workflow that sets MINIKUBE_CONTAINER_RUNTIME keeps that runtime: the
+  # action must not add its docker default, which would override the variable
+  container-runtime-env:
+    name: Container runtime in MINIKUBE_CONTAINER_RUNTIME
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, ubuntu-24.04-arm]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Setup Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+      - name: Test Action
+        uses: ./
+        env:
+          MINIKUBE_CONTAINER_RUNTIME: containerd
+        with:
+          minikube version: v1.39.0
+          kubernetes version: v1.37.1
+          github token: ${{ secrets.GITHUB_TOKEN }}
+          driver: docker
+      - name: Validate Minikube
+        run: minikube status | grep Running
+      - name: Validate Cluster
+        run: kubectl get nodes
+      - name: Validate container runtime (containerd)
+        run: kubectl get nodes -o jsonpath='{.items[0].status.nodeInfo.containerRuntimeVersion}' | grep '^containerd://'
   unsupported:
     name: Unsupported K8s versions
     runs-on: ubuntu-22.04

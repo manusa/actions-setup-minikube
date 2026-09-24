@@ -15,6 +15,19 @@ const {
 const CLASSIC_SUDO = '/usr/bin/sudo.ws';
 
 const driver = inputs => inputs.driver || 'none';
+// Minikube v1.39.0 changed its default container runtime to containerd.
+// Keep docker, the runtime the action has always used, unless the user picks
+// one through the input or MINIKUBE_CONTAINER_RUNTIME. It goes before the
+// start args, so a --container-runtime there still wins.
+const containerRuntime = inputs => {
+  if (inputs.containerRuntime) {
+    return `--container-runtime=${inputs.containerRuntime}`;
+  }
+  if (process.env.MINIKUBE_CONTAINER_RUNTIME) {
+    return '';
+  }
+  return '--container-runtime=docker';
+};
 const isClassicSudoUsable = () => {
   if (!fs.existsSync(CLASSIC_SUDO)) {
     return false;
@@ -57,9 +70,6 @@ const install = async (minikube, inputs) => {
   core.exportVariable('MINIKUBE_HOME', minikubeDirectory);
   core.addPath(minikubeDirectory);
   const versionStatus = await checkKubernetesVersion(minikubeDirectory, inputs);
-  const containerRuntime = inputs.containerRuntime
-    ? `--container-runtime=${inputs.containerRuntime}`
-    : '';
   // When the K8s version is not in Minikube's supported list (but exists on
   // GitHub), --force is needed to bypass Minikube's unauthenticated GitHub
   // API version check which can trigger rate-limit errors in CI.
@@ -79,7 +89,7 @@ const install = async (minikube, inputs) => {
     // existing workflows may rely on the shell evaluating them (word
     // splitting, quotes, $VAR expansion), so they must not be quoted
     `--vm-driver=${driver(inputs)}`,
-    containerRuntime,
+    containerRuntime(inputs),
     // Validated against minikube's list or a kubernetes/kubernetes release
     // tag, so any working value is a plain version and quoting is a no-op
     `--kubernetes-version ${shellQuote(inputs.kubernetesVersion)}`,

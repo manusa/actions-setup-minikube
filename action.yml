@@ -16,7 +16,7 @@ inputs:
   driver:
     description: 'Minikube driver to use. This action supports `none` (default if not specified) or `docker`'
   container runtime:
-    description: 'The container runtime to be used (valid options: docker, cri-o, containerd)'
+    description: 'The container runtime to be used (valid options: docker, cri-o, containerd; default: docker unless MINIKUBE_CONTAINER_RUNTIME is set)'
   start args:
     description: 'Additional arguments to append to minikube start command (evaluated by the shell, see README)'
 outputs:
