@@ -34,7 +34,7 @@ describe('install', () => {
 
   const findStartCommand = () =>
     exec.logExecSync.mock.calls.find(([cmd]) =>
-      cmd.includes('minikube start')
+      cmd.includes("minikube' start")
     )?.[0];
 
   describe('binary installation', () => {
@@ -47,7 +47,7 @@ describe('install', () => {
 
     test('makes the binary executable', () => {
       expect(exec.logExecSync).toHaveBeenCalledWith(
-        'chmod +x /tmp/runner/minikube-binary'
+        "chmod +x '/tmp/runner/minikube-binary'"
       );
     });
 
@@ -74,13 +74,65 @@ describe('install', () => {
     });
   });
 
+  describe('with a minikube directory containing spaces', () => {
+    beforeEach(async () => {
+      await install('/tmp/runner dir/minikube-binary', {
+        minikubeVersion: 'v1.33.7',
+        kubernetesVersion: 'v1.33.7',
+        driver: 'docker'
+      });
+    });
+
+    test('quotes the binary path when making it executable', () => {
+      expect(exec.logExecSync).toHaveBeenCalledWith(
+        "chmod +x '/tmp/runner dir/minikube-binary'"
+      );
+    });
+
+    test('quotes the binary path in the start command', () => {
+      expect(findStartCommand()).toMatch(
+        /^'\/tmp\/runner dir\/minikube' start /
+      );
+    });
+
+    test('quotes the paths when changing config ownership', () => {
+      expect(exec.logExecSync).toHaveBeenCalledWith(
+        `sudo chown -R $USER "$HOME/.kube" '/tmp/runner dir/.minikube'`
+      );
+    });
+
+    test('quotes the paths when making config readable', () => {
+      expect(exec.logExecSync).toHaveBeenCalledWith(
+        `sudo chmod -R a+r "$HOME/.kube" '/tmp/runner dir/.minikube'`
+      );
+    });
+
+    test('quotes the path when restricting ssh key permissions', () => {
+      expect(exec.logExecSync).toHaveBeenCalledWith(
+        "sudo find '/tmp/runner dir/.minikube' -name id_rsa -exec chmod 600 {} \\;"
+      );
+    });
+  });
+
   describe('start command', () => {
     test('includes kubernetes version', async () => {
       await install('/tmp/runner/minikube', {
         minikubeVersion: 'v1.33.7',
         kubernetesVersion: 'v1.33.7'
       });
-      expect(findStartCommand()).toContain('--kubernetes-version v1.33.7');
+      expect(findStartCommand()).toContain("--kubernetes-version 'v1.33.7'");
+    });
+
+    // A validated version is a plain tag, so quoting it changes nothing for
+    // working values but stops shell syntax that slips past the tag check
+    test('quotes the kubernetes version', async () => {
+      await install('/tmp/runner/minikube', {
+        minikubeVersion: 'v1.33.7',
+        kubernetesVersion: 'v1.35.2#;id;#'
+      });
+      expect(findStartCommand()).toContain(
+        "--kubernetes-version 'v1.35.2#;id;#'"
+      );
     });
 
     test('includes vm-driver', async () => {
@@ -112,6 +164,20 @@ describe('install', () => {
       );
     });
 
+    // start args is evaluated by the shell (word splitting, quotes, $VAR),
+    // which existing workflows rely on, so it must be appended verbatim
+    test('appends start args verbatim for the shell to evaluate', async () => {
+      const startArgs =
+        '--memory=$MINIKUBE_MEM --insecure-registry "10.0.0.0/24" --cpus=\'2\'';
+      await install('/tmp/runner/minikube', {
+        minikubeVersion: 'v1.33.7',
+        kubernetesVersion: 'v1.33.7',
+        driver: 'docker',
+        startArgs
+      });
+      expect(findStartCommand().endsWith(` ${startArgs}`)).toBe(true);
+    });
+
     // sudo-rs (default sudo since Ubuntu 25.10) ignores -E; classic sudo
     // ships alongside it as /usr/bin/sudo.ws
     describe('with none driver', () => {
@@ -137,7 +203,7 @@ describe('install', () => {
       // Classic sudo logs the values of explicitly preserved variables, so
       // the fallback list must never grow beyond these non-secret paths
       const fallbackStart =
-        /^sudo -E --preserve-env=HOME,MINIKUBE_HOME \/tmp\/runner\/minikube start /;
+        /^sudo -E --preserve-env=HOME,MINIKUBE_HOME '\/tmp\/runner\/minikube' start /;
 
       describe('when classic sudo is installed as sudo.ws and usable', () => {
         beforeEach(async () => {
@@ -147,7 +213,7 @@ describe('install', () => {
 
         test('runs minikube start through sudo.ws -E', () => {
           expect(findStartCommand()).toMatch(
-            /^\/usr\/bin\/sudo\.ws -E \/tmp\/runner\/minikube start /
+            /^\/usr\/bin\/sudo\.ws -E '\/tmp\/runner\/minikube' start /
           );
         });
       });
@@ -242,7 +308,7 @@ describe('install', () => {
         return 'supported';
       });
       exec.logExecSync.mockImplementation(cmd => {
-        if (cmd.includes('minikube start')) callOrder.push('start');
+        if (cmd.includes("minikube' start")) callOrder.push('start');
       });
       await install('/tmp/runner/minikube', {
         minikubeVersion: 'v1.33.7',

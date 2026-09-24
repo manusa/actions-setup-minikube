@@ -3,12 +3,15 @@
 const core = require('@actions/core');
 const execSync = require('./exec').execSync;
 const {gitHubRequest, apiBaseUrl} = require('./github');
+const {shellQuote} = require('./shell-quote');
 
 const SUPPORTED = 'supported';
 const UNSUPPORTED = 'unsupported';
 
 const minikubeSupportedVersions = minikubeDirectory =>
-  execSync(`${minikubeDirectory}/minikube config defaults kubernetes-version`)
+  execSync(
+    `${shellQuote(`${minikubeDirectory}/minikube`)} config defaults kubernetes-version`
+  )
     .toString()
     .split('\n')
     .map(v => v.replace(/^\*\s*/, '').trim())
