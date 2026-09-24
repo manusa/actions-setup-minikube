@@ -46,7 +46,7 @@ This is a GitHub Action and cannot be run directly. Test locally by:
 ```
 src/
   index.js              # Entry point - orchestrates the setup process
-  check-environment.js  # Validates Ubuntu version (18, 20, 22, 24)
+  check-environment.js  # Validates Ubuntu 18.04 or later (ID/VERSION_ID in /etc/os-release)
   check-kubernetes-version.js # Validates K8s version against Minikube's supported list
   configure-environment.js # Prepares system (apt packages, Docker, CNI plugins)
   download.js           # Downloads binaries from GitHub releases (Minikube, CNI plugins, crictl, cri-dockerd)
@@ -60,7 +60,7 @@ src/
 action.yml              # GitHub Action definition (outputs: `force`)
 .github/workflows/
   check.yml             # CI: format check + unit tests
-  runner.yml            # E2E tests: runs action against multiple K8s versions
+  runner.yml            # E2E tests: runs action against multiple K8s versions and Ubuntu runner images
 ```
 
 ### Design Patterns
@@ -217,8 +217,12 @@ Architecture detection lives in `src/arch.js`, which maps `process.arch` to the 
 1. Extend the `switch` in `src/arch.js` with the new `process.arch` value and its GitHub release suffix. Keep the default branch throwing — the strict allow-list is intentional so unsupported runners fail fast.
 2. Add coverage in `src/__tests__/arch.test.js` (the success case) and `src/__tests__/check-environment.test.js` (the fail-fast behavior on unsupported archs).
 3. Add fixtures and an `on <arch> host` describe in `src/__tests__/download.test.js` for each of the four downloads (Minikube, CNI plugins, crictl, cri-dockerd) so the asset predicates are verified end-to-end.
-4. Extend the `os` matrix axis in `.github/workflows/runner.yml` for the jobs that exercise the relevant code path (at minimum `default-inputs` for the `none` driver and `docker-driver` for the docker path).
+4. Extend the `os` matrix axis in `.github/workflows/runner.yml` for the jobs that exercise the relevant code path (at minimum `default-inputs` for the `none` driver and `docker-driver` for the docker path), and add the new arch's runner labels to the `os-smoke` job.
 5. Confirm the four upstreams publish assets for the new architecture before relying on it — release naming is upstream-defined and not all tags carry every arch.
+
+### Supporting a New Ubuntu Runner Image
+
+`src/check-environment.js` accepts any Ubuntu whose `VERSION_ID` major is at least `MIN_UBUNTU_MAJOR_VERSION` (18), so a new Ubuntu release needs no code change. When GitHub publishes a new hosted image (e.g. `ubuntu-28.04`), add it and its `-arm` variant to the `os-smoke` job matrix in `.github/workflows/runner.yml`, and update the list of validated images in `README.md`. Drop images from `os-smoke` once GitHub retires them.
 
 ### Adding a New Action Input
 
@@ -323,11 +327,11 @@ Run `npm run format` locally before committing. Husky pre-commit hook should han
 E2E tests in `runner.yml` require GitHub Actions environment. Check:
 - Minikube version compatibility
 - Kubernetes version compatibility
-- Ubuntu version (only 18.04, 20.04, 22.04, 24.04 supported)
+- Ubuntu version (18.04 or later supported; the `os-smoke` job covers each GitHub-hosted image)
 
 ### Action Fails with "Unsupported OS"
 
-The action only supports Ubuntu Linux. Check `src/check-environment.js` for supported versions.
+The action only supports Ubuntu Linux 18.04 or later. Check `src/check-environment.js` for the minimum version (`MIN_UBUNTU_MAJOR_VERSION`). The error ends with `(detected: …)`, showing what the check saw: the platform on non-Linux hosts, `linux, no /etc/os-release` when that file is missing, or the os-release `ID` and `VERSION_ID` otherwise (`unknown` when a field is missing or empty).
 
 ## Feature Specifications
 

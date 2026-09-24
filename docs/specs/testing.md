@@ -170,7 +170,7 @@ This pattern is:
 
 | Test File                          | Tests | Mocks                     | Approach   |
 | ---------------------------------- | ----- | ------------------------- | ---------- |
-| `check-environment.test.js`        | 7     | fs (selective)            | Behavioral |
+| `check-environment.test.js`        | 29    | fs (selective)            | Behavioral |
 | `check-kubernetes-version.test.js` | 8     | core, exec, github        | Behavioral |
 | `configure-environment.test.js`    | 13    | exec, download            | Behavioral |
 | `download.test.js`                 | 19    | core, github, exec        | Behavioral |

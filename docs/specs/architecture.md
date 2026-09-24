@@ -62,7 +62,7 @@ Each step is a separate module with a single responsibility:
 
 | Module | Responsibility |
 |--------|----------------|
-| `src/check-environment.js` | Validates Ubuntu version (18, 20, 22, 24) |
+| `src/check-environment.js` | Validates Ubuntu 18.04 or later |
 | `src/load-inputs.js` | Loads action inputs via `@actions/core` |
 | `src/configure-environment.js` | Prepares system (apt packages, Docker, CNI plugins) |
 | `src/download.js` | Downloads binaries from GitHub releases |

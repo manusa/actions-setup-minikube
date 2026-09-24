@@ -7,6 +7,44 @@ on:
   pull_request:
 
 jobs:
+  # Smoke test on every supported GitHub-hosted Ubuntu runner image (pinned,
+  # independent of where ubuntu-latest points). Uses the none driver since it
+  # runs Kubernetes directly on the host, exercising the OS-sensitive setup
+  # (apt, systemd cri-dockerd, CNI plugins, crictl).
+  # See https://github.com/manusa/actions-setup-minikube/issues/156
+  os-smoke:
+    name: OS smoke test
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-22.04
+          - ubuntu-22.04-arm
+          - ubuntu-24.04
+          - ubuntu-24.04-arm
+          - ubuntu-26.04
+          - ubuntu-26.04-arm
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@master
+      - name: Test Action
+        uses: ./
+        with:
+          minikube version: v1.38.1
+          kubernetes version: v1.35.2
+          github token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Validate Minikube
+        run: minikube status | grep Running
+      - name: Validate Cluster
+        run: kubectl get nodes
+      # A broken CNI setup leaves the node NotReady, which `get nodes` ignores
+      - name: Validate node is Ready
+        run: kubectl wait --for=condition=Ready nodes --all --timeout=180s
+      - name: Validate default driver
+        run: 'cat "$MINIKUBE_HOME/.minikube/machines/minikube/config.json" | jq ".DriverName" | grep none'
   default-inputs:
     name: Defaults
     runs-on: ${{ matrix.os }}
