@@ -18,7 +18,7 @@ inputs:
   container runtime:
     description: 'The container runtime to be used (valid options: docker, cri-o, containerd)'
   start args:
-    description: 'Additional arguments to append to minikube start command'
+    description: 'Additional arguments to append to minikube start command (evaluated by the shell, see README)'
 outputs:
   force:
     description: 'Set to true when --force was added to minikube start because the requested Kubernetes version is not in Minikube built-in supported list'
