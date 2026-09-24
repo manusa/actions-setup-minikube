@@ -77,7 +77,6 @@ action.yml              # GitHub Action definition (outputs: `force`)
 
 **npm packages (in `package.json`):**
 - `@actions/core` - Action inputs, outputs, and logging
-- `@actions/github` - GitHub context utilities
 - `@actions/io` - File system operations
 - `@actions/tool-cache` - Binary downloads and caching
 - `axios` - HTTP requests to GitHub API (via `src/github.js`)
