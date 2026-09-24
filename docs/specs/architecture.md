@@ -152,7 +152,7 @@ The project is currently CommonJS (`require`/`module.exports`). All four `@actio
 | Package | Current (CJS) | Target (ESM-only) |
 |---------|---------------|---------------------|
 | `@actions/core` | 2.0.3 | 3.0.0 |
-| `@actions/github` | 6.0.0 | Remove (unused) |
+| `@actions/github` | Removed (unused) | Not needed |
 | `@actions/io` | 2.0.0 | 3.0.2 |
 | `@actions/tool-cache` | 3.0.1 | 4.0.0 |
 | `axios` | 1.13.6 | 1.13.6 (has CJS fallback, no concern) |
