@@ -307,22 +307,28 @@ Paste the three hex values into `criDockerd.binarySha256.amd64`, `criDockerd.bin
 
 Releases use lightweight tags and a commit message format of `[RELEASE] Release v<version>`. The release commit must update exactly 4 files: `package.json`, `package-lock.json`, `node_modules/.package-lock.json`, and `README.md`.
 
+**Before you start:**
+- Make sure the latest `master` commit is green in both workflows (`Perform checks` and `Run action (E2E tests)`): the release commit and tag go on top of it.
+- Choose the version with a SemVer audit of every change since the last tag against the public API: the `action.yml` inputs and outputs plus the behavior documented in `README.md`. Ignore commit prefixes (`feat:`, `fix:`) and how a change was framed. A backward-compatible addition to what the action supports (a new input or output, newly supported runner images or tool versions) is MINOR; behavior-preserving fixes, hardening and dependency updates are PATCH.
+- Run the npm steps with the npm version CI uses, not the machine's: some local npm versions (e.g. 11.6.x) write lockfiles that CI's `npm ci` rejects. `check.yml` pins no Node version, so CI uses the runner's default npm (10.9.8 on Node 22 at the time of writing; a `Perform checks` log shows it).
+
 **Follow this exact sequence:**
 
 1. Bump the version in `package.json`
 2. Update every action reference in `README.md` (e.g., `manusa/actions-setup-minikube@v2.16.0` → `@v2.16.1`); there are two, in the Basic usage example and the `start args` example
-3. Regenerate `package-lock.json`: `npm install --ignore-scripts --package-lock-only`
-4. **Prune devDependencies** so `node_modules/.package-lock.json` only contains the version bump (not dev deps): `npm prune --omit=dev --ignore-scripts`
+3. Regenerate `package-lock.json` with CI's npm: `npx -y npm@10.9.8 install --ignore-scripts --package-lock-only`
+4. **Prune devDependencies** so `node_modules/.package-lock.json` only contains the version bump (not dev deps): `npx -y npm@10.9.8 prune --omit=dev --ignore-scripts`. Then check that CI accepts the lockfile: in a scratch copy of the repository (never in the checkout, `npm ci` wipes the committed `node_modules/`), `npx -y npm@10.9.8 ci --ignore-scripts --dry-run` must not report `Missing: … from lock file`
 5. Stage all 4 files: `git add package.json package-lock.json node_modules/.package-lock.json README.md`
 6. Commit with sign-off: `git commit --signoff -m "[RELEASE] Release v<version>"`
-7. Create a lightweight tag: `git tag v<version>`
-8. Push: `git push origin master --tags`
-9. **Publish the GitHub Release manually via the GitHub UI** (https://github.com/manusa/actions-setup-minikube/releases/new). Select the `v<version>` tag, set the title to `v<version>`, and click "Generate release notes" to auto-populate the body (matches the historical style: a `**Full Changelog**: …compare/v<prev>...v<version>` link plus the PR list). This step is required — pushing the tag alone does not publish a GitHub Release, and downstream consumers and Marketplace listings look at Releases, not raw tags. AI agents should not run `gh release create` for this; leave it to the maintainer.
+7. Create a lightweight tag: `git tag --no-sign v<version>` (with `tag.gpgSign` enabled, a plain `git tag` tries to create a signed annotated tag and fails with "no tag message?")
+8. Push the branch and the new tag only: `git push origin master v<version>` (`--tags` would also publish any stray local tag)
+9. **Publish the GitHub Release manually via the GitHub UI** (https://github.com/manusa/actions-setup-minikube/releases/new). Select the `v<version>` tag, set the title to `v<version>`, and click "Generate release notes" to auto-populate the body (matches the historical style: a `**Full Changelog**: …compare/v<prev>...v<version>` link plus the PR list). The notes list PR titles, so check the titles of the PRs merged since the last release first (a user-facing change merged under a `ci:` or `chore:` title is easy to miss), and add a short **Highlights** paragraph at the top for behavior changes users should know about. This step is required — pushing the tag alone does not publish a GitHub Release, and downstream consumers and Marketplace listings look at Releases, not raw tags. AI agents should not run `gh release create` for this; leave it to the maintainer.
 
 **Common mistakes to avoid:**
 - **Forgetting to prune dev deps before staging**: `node_modules/.package-lock.json` will have a huge diff with all dev dependencies instead of just the version bump
 - **Forgetting `package-lock.json` and `node_modules/.package-lock.json`**: Both lock files must be in the release commit — check against previous releases (e.g., `git show e5e04be --stat`)
 - **Running `npm install` instead of `--package-lock-only`**: This reinstalls dev deps into `node_modules/`, requiring another prune
+- **Running the npm steps with the machine's npm**: the lockfile can pass `npm test` locally and still break CI's `npm ci` (missing optional peer entries, as happened in #161)
 - **Stopping after `git push`**: the tag exists on the remote but no GitHub Release is published until step 9 — Marketplace and the Releases page will still show the previous version as latest.
 
 ## Troubleshooting
