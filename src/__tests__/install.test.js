@@ -134,7 +134,12 @@ describe('install', () => {
         jest.restoreAllMocks();
       });
 
-      describe('when classic sudo is installed as sudo.ws', () => {
+      // Classic sudo logs the values of explicitly preserved variables, so
+      // the fallback list must never grow beyond these non-secret paths
+      const fallbackStart =
+        /^sudo -E --preserve-env=HOME,MINIKUBE_HOME \/tmp\/runner\/minikube start /;
+
+      describe('when classic sudo is installed as sudo.ws and usable', () => {
         beforeEach(async () => {
           givenSudoWs(true);
           await startNone();
@@ -147,22 +152,31 @@ describe('install', () => {
         });
       });
 
-      describe('when only the default sudo is available', () => {
+      describe('when classic sudo is installed as sudo.ws but not usable', () => {
+        beforeEach(async () => {
+          givenSudoWs(true);
+          exec.execSync.mockImplementation(cmd => {
+            if (cmd.startsWith('/usr/bin/sudo.ws')) {
+              throw new Error('sudo: a password is required');
+            }
+            return 'minikube version: v1.33.7';
+          });
+          await startNone();
+        });
+
+        test('falls back to sudo -E preserving only HOME and MINIKUBE_HOME', () => {
+          expect(findStartCommand()).toMatch(fallbackStart);
+        });
+      });
+
+      describe('when classic sudo is not installed', () => {
         beforeEach(async () => {
           givenSudoWs(false);
           await startNone();
         });
 
-        test('runs minikube start through sudo -E', () => {
-          expect(findStartCommand()).toMatch(/^sudo -E /);
-        });
-
-        // Classic sudo logs the values of explicitly preserved variables, so
-        // the list must never grow beyond these non-secret paths
-        test('explicitly preserves only HOME and MINIKUBE_HOME', () => {
-          expect(findStartCommand()).toMatch(
-            /^sudo -E --preserve-env=HOME,MINIKUBE_HOME \/tmp\/runner\/minikube start /
-          );
+        test('runs sudo -E preserving only HOME and MINIKUBE_HOME', () => {
+          expect(findStartCommand()).toMatch(fallbackStart);
         });
       });
     });
