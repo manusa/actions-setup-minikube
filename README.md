@@ -37,7 +37,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
       - name: Setup Minikube
-        uses: manusa/actions-setup-minikube@v2.18.0
+        uses: manusa/actions-setup-minikube@v2.19.0
         with:
           minikube version: 'v1.39.0'
           kubernetes version: 'v1.37.1'
@@ -71,7 +71,7 @@ bash-only syntax such as brace expansion does not:
 
 ```yaml
       - name: Setup Minikube
-        uses: manusa/actions-setup-minikube@v2.18.0
+        uses: manusa/actions-setup-minikube@v2.19.0
         env:
           MAX_PODS: 50
         with:
