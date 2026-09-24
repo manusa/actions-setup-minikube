@@ -177,7 +177,7 @@ This pattern is:
 | `error-handler.test.js`            | 3     | core                      | Behavioral |
 | `exec.test.js`                     | 5     | none                      | Behavioral |
 | `github.test.js`                   | 6     | none                      | Behavioral |
-| `install.test.js`                  | 17    | core, io, exec, check-k8s | Behavioral |
+| `install.test.js`                  | 19    | core, io, exec, check-k8s | Behavioral |
 | `load-inputs.test.js`              | 8     | none                      | Behavioral |
 
 ### ESM Test Conversion

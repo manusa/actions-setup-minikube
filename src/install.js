@@ -3,6 +3,7 @@
 const core = require('@actions/core');
 const execSync = require('./exec').execSync;
 const logExecSync = require('./exec').logExecSync;
+const fs = require('node:fs');
 const path = require('node:path');
 const io = require('@actions/io');
 const {
@@ -10,12 +11,23 @@ const {
   UNSUPPORTED
 } = require('./check-kubernetes-version');
 
+const CLASSIC_SUDO = '/usr/bin/sudo.ws';
+
 const driver = inputs => inputs.driver || 'none';
+// minikube start must inherit the runner's environment (at least HOME and
+// MINIKUBE_HOME, so its config lands in the runner's home, not /root).
+// sudo-rs (Ubuntu's default sudo since 25.10) ignores -E, but those releases
+// still ship classic sudo as sudo.ws. Without it, HOME and MINIKUBE_HOME are
+// preserved explicitly. Keep that list to non-secret values: classic sudo
+// logs the values of explicitly preserved variables to syslog.
 const sudo = inputs => {
   if (inputs.driver === 'docker') {
     return '';
   }
-  return 'sudo -E';
+  if (fs.existsSync(CLASSIC_SUDO)) {
+    return `${CLASSIC_SUDO} -E`;
+  }
+  return 'sudo -E --preserve-env=HOME,MINIKUBE_HOME';
 };
 
 const install = async (minikube, inputs) => {
