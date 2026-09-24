@@ -5,6 +5,7 @@ const tc = require('@actions/tool-cache');
 const crypto = require('node:crypto');
 const fs = require('node:fs');
 const {logExecSync} = require('./exec');
+const {shellQuote} = require('./shell-quote');
 const {gitHubRequest, apiBaseUrl, serverBaseUrl} = require('./github');
 const {arch} = require('./arch');
 const checksums = require('./checksums');
@@ -149,7 +150,7 @@ const installCniPlugins = async (inputs = {}) => {
   const extractedTarDir = await tc.extractTar(tar);
   const cniBinDirPath = '/opt/cni/bin';
   logExecSync(
-    `sudo find ${extractedTarDir} -type f -exec install -Dm 0755 "{}" -t "${cniBinDirPath}" \\;`
+    `sudo find ${shellQuote(extractedTarDir)} -type f -exec install -Dm 0755 "{}" -t "${cniBinDirPath}" \\;`
   );
 };
 
@@ -197,7 +198,7 @@ const installCriDockerd = async (inputs = {}) => {
   const binaryDir = await tc.extractTar(binaryTar);
   const binaryContent = firstDir(binaryDir);
   logExecSync(
-    `sudo install -m 0755 ${binaryDir}/${binaryContent}/cri-dockerd /usr/local/bin/`
+    `sudo install -m 0755 ${shellQuote(`${binaryDir}/${binaryContent}/cri-dockerd`)} /usr/local/bin/`
   );
   logExecSync(`sudo ln -sf /usr/local/bin/cri-dockerd /usr/bin/cri-dockerd`);
   // Service file
@@ -209,7 +210,7 @@ const installCriDockerd = async (inputs = {}) => {
   const sourceDir = await tc.extractTar(sourceTar);
   const sourceContent = firstDir(sourceDir);
   logExecSync(
-    `sudo cp -a ${sourceDir}/${sourceContent}/packaging/systemd/* /etc/systemd/system`
+    `sudo cp -a ${shellQuote(`${sourceDir}/${sourceContent}/packaging/systemd`)}/* /etc/systemd/system`
   );
   const serviceFile = '/etc/systemd/system/cri-docker.service';
   fs.writeFileSync(

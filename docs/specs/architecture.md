@@ -73,6 +73,7 @@ Each step is a separate module with a single responsibility:
 | Module | Responsibility |
 |--------|----------------|
 | `src/exec.js` | Shell command execution utilities (`execSync`, `logExecSync`) |
+| `src/shell-quote.js` | `shellQuote` for embedding action-controlled values (paths) in shell commands |
 | `src/error-handler.js` | Global error handling, sets action as failed |
 | `src/github.js` | GitHub API requests via Axios (authenticated and unauthenticated) |
 | `src/check-kubernetes-version.js` | Validates Kubernetes version against Minikube's supported list |

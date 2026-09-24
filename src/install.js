@@ -3,6 +3,7 @@
 const core = require('@actions/core');
 const execSync = require('./exec').execSync;
 const logExecSync = require('./exec').logExecSync;
+const {shellQuote} = require('./shell-quote');
 const fs = require('node:fs');
 const path = require('node:path');
 const io = require('@actions/io');
@@ -45,7 +46,7 @@ const sudo = inputs => {
 
 const install = async (minikube, inputs) => {
   core.info('Installing Minikube');
-  logExecSync(`chmod +x ${minikube}`);
+  logExecSync(`chmod +x ${shellQuote(minikube)}`);
   const minikubeDirectory = path.dirname(minikube);
   // See https://github.com/kubernetes/minikube/pull/18648
   // https://github.com/kubernetes/minikube/issues/15835
@@ -70,23 +71,27 @@ const install = async (minikube, inputs) => {
     );
     core.setOutput('force', 'true');
   }
+  const minikubeHome = shellQuote(`${minikubeDirectory}/.minikube`);
   const startCommand = [
     sudo(inputs),
-    `${minikubeDirectory}/minikube start`,
+    `${shellQuote(`${minikubeDirectory}/minikube`)} start`,
+    // driver, container runtime and start args are user inputs appended as-is:
+    // existing workflows may rely on the shell evaluating them (word
+    // splitting, quotes, $VAR expansion), so they must not be quoted
     `--vm-driver=${driver(inputs)}`,
     containerRuntime,
-    `--kubernetes-version ${inputs.kubernetesVersion}`,
+    // Validated against minikube's list or a kubernetes/kubernetes release
+    // tag, so any working value is a plain version and quoting is a no-op
+    `--kubernetes-version ${shellQuote(inputs.kubernetesVersion)}`,
     force,
     inputs.startArgs
   ]
     .filter(Boolean)
     .join(' ');
   logExecSync(startCommand);
-  logExecSync(`sudo chown -R $USER $HOME/.kube ${minikubeDirectory}/.minikube`);
-  logExecSync(`sudo chmod -R a+r $HOME/.kube ${minikubeDirectory}/.minikube`);
-  logExecSync(
-    `sudo find ${minikubeDirectory}/.minikube -name id_rsa -exec chmod 600 {} \\;`
-  );
+  logExecSync(`sudo chown -R $USER "$HOME/.kube" ${minikubeHome}`);
+  logExecSync(`sudo chmod -R a+r "$HOME/.kube" ${minikubeHome}`);
+  logExecSync(`sudo find ${minikubeHome} -name id_rsa -exec chmod 600 {} \\;`);
   const minikubeVersion = execSync(`minikube version`)
     .toString()
     .replace(/[\n\r]/g, '');

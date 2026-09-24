@@ -39,6 +39,17 @@ describe('checkKubernetesVersion', () => {
     delete process.env.GITHUB_API_URL;
   });
 
+  describe('with a minikube directory containing spaces', () => {
+    test('quotes the binary path when listing supported versions', async () => {
+      await checkKubernetesVersion('/tmp/runner dir', {
+        kubernetesVersion: 'v1.35.2'
+      });
+      expect(exec.execSync).toHaveBeenCalledWith(
+        "'/tmp/runner dir/minikube' config defaults kubernetes-version"
+      );
+    });
+  });
+
   describe('when version is in minikube supported list', () => {
     test('returns SUPPORTED', async () => {
       const result = await checkKubernetesVersion('/minikube-dir', {

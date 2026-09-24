@@ -360,9 +360,16 @@ describe('download module', () => {
     test('extracts plugin binaries from downloaded tarball', async () => {
       await download.installCniPlugins({});
       const installCmd = exec.logExecSync.mock.calls[0][0];
-      const extractedDir = installCmd.match(/sudo find (\S+)/)[1];
+      const extractedDir = installCmd.match(/sudo find '([^']+)'/)[1];
       expect(fs.readdirSync(extractedDir)).toEqual(
         expect.arrayContaining(['bridge', 'loopback'])
+      );
+    });
+
+    test('quotes the extracted directory path', async () => {
+      await download.installCniPlugins({});
+      expect(exec.logExecSync.mock.calls[0][0]).toMatch(
+        /^sudo find '[^']+' -type f /
       );
     });
 
@@ -821,7 +828,28 @@ describe('download module', () => {
         cmd.includes('install -m 0755')
       );
       expect(installCall[0]).toMatch(
-        /\/cri-dockerd\/cri-dockerd \/usr\/local\/bin\//
+        /\/cri-dockerd\/cri-dockerd' \/usr\/local\/bin\//
+      );
+    });
+
+    test('quotes the extracted binary path', async () => {
+      await download.installCriDockerd({});
+      const installCall = exec.logExecSync.mock.calls.find(([cmd]) =>
+        cmd.includes('install -m 0755')
+      );
+      expect(installCall[0]).toMatch(
+        /^sudo install -m 0755 '[^']+\/cri-dockerd' \/usr\/local\/bin\/$/
+      );
+    });
+
+    // The glob must stay outside the quotes so the shell still expands it
+    test('quotes the systemd units directory but not the glob', async () => {
+      await download.installCriDockerd({});
+      const copyCall = exec.logExecSync.mock.calls.find(([cmd]) =>
+        cmd.includes('sudo cp -a')
+      );
+      expect(copyCall[0]).toMatch(
+        /^sudo cp -a '[^']+\/packaging\/systemd'\/\* \/etc\/systemd\/system$/
       );
     });
 
