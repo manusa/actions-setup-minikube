@@ -144,13 +144,124 @@ describe('install', () => {
       expect(findStartCommand()).toContain('--vm-driver=docker');
     });
 
-    test('includes container runtime when specified', async () => {
-      await install('/tmp/runner/minikube', {
-        minikubeVersion: 'v1.33.7',
-        kubernetesVersion: 'v1.33.7',
-        containerRuntime: 'containerd'
+    // Minikube v1.39.0+ defaults to containerd, the action keeps docker
+    describe('container runtime', () => {
+      let originalEnvRuntime;
+      const startWith = inputs =>
+        install('/tmp/runner/minikube', {
+          minikubeVersion: 'v1.33.7',
+          kubernetesVersion: 'v1.33.7',
+          ...inputs
+        });
+
+      beforeEach(() => {
+        originalEnvRuntime = process.env.MINIKUBE_CONTAINER_RUNTIME;
+        delete process.env.MINIKUBE_CONTAINER_RUNTIME;
       });
-      expect(findStartCommand()).toContain('--container-runtime=containerd');
+
+      afterEach(() => {
+        if (originalEnvRuntime === undefined) {
+          delete process.env.MINIKUBE_CONTAINER_RUNTIME;
+        } else {
+          process.env.MINIKUBE_CONTAINER_RUNTIME = originalEnvRuntime;
+        }
+      });
+
+      describe('when not specified', () => {
+        beforeEach(async () => {
+          await startWith({});
+        });
+
+        test('defaults to docker', () => {
+          expect(findStartCommand()).toContain('--container-runtime=docker');
+        });
+      });
+
+      // core.getInput returns '' for an input the workflow doesn't set
+      describe('when the input is empty', () => {
+        beforeEach(async () => {
+          await startWith({containerRuntime: ''});
+        });
+
+        test('defaults to docker', () => {
+          expect(findStartCommand()).toContain('--container-runtime=docker');
+        });
+      });
+
+      describe('when not specified with the docker driver', () => {
+        beforeEach(async () => {
+          await startWith({containerRuntime: '', driver: 'docker'});
+        });
+
+        test('defaults to docker', () => {
+          expect(findStartCommand()).toContain('--container-runtime=docker');
+        });
+      });
+
+      describe('when specified', () => {
+        beforeEach(async () => {
+          await startWith({containerRuntime: 'containerd'});
+        });
+
+        test('uses the specified runtime', () => {
+          expect(findStartCommand()).toContain(
+            '--container-runtime=containerd'
+          );
+        });
+
+        test('does not add the docker default', () => {
+          expect(findStartCommand()).not.toContain(
+            '--container-runtime=docker'
+          );
+        });
+      });
+
+      describe('when not specified but set in MINIKUBE_CONTAINER_RUNTIME', () => {
+        beforeEach(async () => {
+          process.env.MINIKUBE_CONTAINER_RUNTIME = 'containerd';
+          await startWith({});
+        });
+
+        test('leaves the runtime to minikube', () => {
+          expect(findStartCommand()).not.toContain('--container-runtime');
+        });
+      });
+
+      // minikube ignores an empty MINIKUBE_CONTAINER_RUNTIME
+      describe('when not specified and MINIKUBE_CONTAINER_RUNTIME is empty', () => {
+        beforeEach(async () => {
+          process.env.MINIKUBE_CONTAINER_RUNTIME = '';
+          await startWith({containerRuntime: ''});
+        });
+
+        test('defaults to docker', () => {
+          expect(findStartCommand()).toContain('--container-runtime=docker');
+        });
+      });
+
+      describe('when specified and set in MINIKUBE_CONTAINER_RUNTIME', () => {
+        beforeEach(async () => {
+          process.env.MINIKUBE_CONTAINER_RUNTIME = 'containerd';
+          await startWith({containerRuntime: 'cri-o'});
+        });
+
+        test('uses the specified runtime', () => {
+          expect(findStartCommand()).toContain('--container-runtime=cri-o');
+        });
+      });
+
+      // minikube keeps the last value of a repeated flag
+      describe('when not specified but passed in start args', () => {
+        beforeEach(async () => {
+          await startWith({startArgs: '--container-runtime=containerd'});
+        });
+
+        test('adds the docker default before start args so they win', () => {
+          expect(findStartCommand()).toMatch(
+            /--container-runtime=docker .*--container-runtime=containerd$/
+          );
+        });
+      });
     });
 
     test('includes start args', async () => {

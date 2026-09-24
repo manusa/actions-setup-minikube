@@ -17,8 +17,8 @@ The action is validated on every change against the `ubuntu-22.04`,
 _On self-hosted Ubuntu 25.10 or later runners using the default `none` driver,
 keep the classic `sudo` package installed next to `sudo-rs` (it provides
 `/usr/bin/sudo.ws`). With `sudo-rs` alone, only `HOME` and `MINIKUBE_HOME` are
-passed to `minikube start`, so variables such as `KUBECONFIG` or proxy
-settings are not._
+passed to `minikube start`, so variables such as `KUBECONFIG`,
+`MINIKUBE_CONTAINER_RUNTIME` or proxy settings are not._
 
 ## Usage
 
@@ -59,7 +59,7 @@ jobs:
 |---------------------|------------------------------------------------------------------------------------------------------------------------------------------|
 | `github token`      | GITHUB_TOKEN secret value to access GitHub REST API with an unlimited number of requests (optional but recommended)                      |
 | `driver`            | Minikube [driver](https://minikube.sigs.k8s.io/docs/drivers/) to use. This action supports `none` (default if not specified) or `docker` |
-| `container runtime` | The container runtime to be used (valid options: docker, cri-o, containerd)                                                              |
+| `container runtime` | The container runtime to be used (valid options: docker, cri-o, containerd; default: docker unless `MINIKUBE_CONTAINER_RUNTIME` is set)  |
 | `start args`        | Additional arguments to append to [`minikube start`](https://minikube.sigs.k8s.io/docs/commands/start/) command (see [below](#start-args)) |
 
 ### `start args`
