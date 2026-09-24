@@ -8,9 +8,17 @@ Set up your GitHub Actions workflow with a specific version of
 [Minikube](https://github.com/kubernetes/minikube)
 and [Kubernetes](https://github.com/kubernetes/kubernetes).
 
-_Currently only Linux Ubuntu 18.04, 20.04, 22.04, or 24.04
+_Currently only Linux Ubuntu 18.04 or later
 [CI environment](https://help.github.com/en/github/automating-your-workflow-with-github-actions/virtual-environments-for-github-actions)
-is supported, on either x64 (amd64) or arm64 (e.g. `ubuntu-24.04-arm`) runners._
+is supported, on either x64 (amd64) or arm64 (e.g. `ubuntu-24.04-arm`) runners.
+The action is validated on every change against the `ubuntu-22.04`,
+`ubuntu-24.04`, and `ubuntu-26.04` runner images (and their `-arm` variants)._
+
+_On self-hosted Ubuntu 25.10 or later runners using the default `none` driver,
+keep the classic `sudo` package installed next to `sudo-rs` (it provides
+`/usr/bin/sudo.ws`). With `sudo-rs` alone, only `HOME` and `MINIKUBE_HOME` are
+passed to `minikube start`, so variables such as `KUBECONFIG` or proxy
+settings are not._
 
 ## Usage
 

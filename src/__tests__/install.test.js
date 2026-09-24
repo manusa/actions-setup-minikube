@@ -1,5 +1,7 @@
 'use strict';
 
+const fs = require('node:fs');
+
 describe('install', () => {
   let core;
   let io;
@@ -110,13 +112,73 @@ describe('install', () => {
       );
     });
 
-    test('uses sudo for none driver', async () => {
-      await install('/tmp/runner/minikube', {
-        minikubeVersion: 'v1.33.7',
-        kubernetesVersion: 'v1.33.7',
-        driver: 'none'
+    // sudo-rs (default sudo since Ubuntu 25.10) ignores -E; classic sudo
+    // ships alongside it as /usr/bin/sudo.ws
+    describe('with none driver', () => {
+      const givenSudoWs = exists => {
+        const originalExistsSync = fs.existsSync.bind(fs);
+        jest
+          .spyOn(fs, 'existsSync')
+          .mockImplementation(p =>
+            p === '/usr/bin/sudo.ws' ? exists : originalExistsSync(p)
+          );
+      };
+      const startNone = () =>
+        install('/tmp/runner/minikube', {
+          minikubeVersion: 'v1.33.7',
+          kubernetesVersion: 'v1.33.7',
+          driver: 'none'
+        });
+
+      afterEach(() => {
+        jest.restoreAllMocks();
       });
-      expect(findStartCommand()).toMatch(/^sudo -E /);
+
+      // Classic sudo logs the values of explicitly preserved variables, so
+      // the fallback list must never grow beyond these non-secret paths
+      const fallbackStart =
+        /^sudo -E --preserve-env=HOME,MINIKUBE_HOME \/tmp\/runner\/minikube start /;
+
+      describe('when classic sudo is installed as sudo.ws and usable', () => {
+        beforeEach(async () => {
+          givenSudoWs(true);
+          await startNone();
+        });
+
+        test('runs minikube start through sudo.ws -E', () => {
+          expect(findStartCommand()).toMatch(
+            /^\/usr\/bin\/sudo\.ws -E \/tmp\/runner\/minikube start /
+          );
+        });
+      });
+
+      describe('when classic sudo is installed as sudo.ws but not usable', () => {
+        beforeEach(async () => {
+          givenSudoWs(true);
+          exec.execSync.mockImplementation(cmd => {
+            if (cmd.startsWith('/usr/bin/sudo.ws')) {
+              throw new Error('sudo: a password is required');
+            }
+            return 'minikube version: v1.33.7';
+          });
+          await startNone();
+        });
+
+        test('falls back to sudo -E preserving only HOME and MINIKUBE_HOME', () => {
+          expect(findStartCommand()).toMatch(fallbackStart);
+        });
+      });
+
+      describe('when classic sudo is not installed', () => {
+        beforeEach(async () => {
+          givenSudoWs(false);
+          await startNone();
+        });
+
+        test('runs sudo -E preserving only HOME and MINIKUBE_HOME', () => {
+          expect(findStartCommand()).toMatch(fallbackStart);
+        });
+      });
     });
 
     test('does not use sudo for docker driver', async () => {

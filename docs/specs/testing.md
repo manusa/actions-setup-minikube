@@ -170,14 +170,14 @@ This pattern is:
 
 | Test File                          | Tests | Mocks                     | Approach   |
 | ---------------------------------- | ----- | ------------------------- | ---------- |
-| `check-environment.test.js`        | 7     | fs (selective)            | Behavioral |
+| `check-environment.test.js`        | 29    | fs (selective)            | Behavioral |
 | `check-kubernetes-version.test.js` | 8     | core, exec, github        | Behavioral |
 | `configure-environment.test.js`    | 13    | exec, download            | Behavioral |
 | `download.test.js`                 | 19    | core, github, exec        | Behavioral |
 | `error-handler.test.js`            | 3     | core                      | Behavioral |
 | `exec.test.js`                     | 5     | none                      | Behavioral |
 | `github.test.js`                   | 6     | none                      | Behavioral |
-| `install.test.js`                  | 17    | core, io, exec, check-k8s | Behavioral |
+| `install.test.js`                  | 19    | core, io, exec, check-k8s | Behavioral |
 | `load-inputs.test.js`              | 8     | none                      | Behavioral |
 
 ### ESM Test Conversion

@@ -6,7 +6,50 @@ on:
       - master
   pull_request:
 
+permissions:
+  contents: read
+
 jobs:
+  # Smoke test on every supported GitHub-hosted Ubuntu runner image (pinned,
+  # independent of where ubuntu-latest points). Uses the none driver since it
+  # runs Kubernetes directly on the host, exercising the OS-sensitive setup
+  # (apt, systemd cri-dockerd, CNI plugins, crictl).
+  # See https://github.com/manusa/actions-setup-minikube/issues/156
+  os-smoke:
+    name: OS smoke test
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-22.04
+          - ubuntu-22.04-arm
+          - ubuntu-24.04
+          - ubuntu-24.04-arm
+          - ubuntu-26.04
+          - ubuntu-26.04-arm
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Setup Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+      - name: Test Action
+        uses: ./
+        with:
+          minikube version: v1.38.1
+          kubernetes version: v1.35.2
+          github token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Validate Minikube
+        run: minikube status | grep Running
+      - name: Validate Cluster
+        run: kubectl get nodes
+      # A broken CNI setup leaves the node NotReady, which `get nodes` ignores
+      - name: Validate node is Ready
+        run: kubectl wait --for=condition=Ready nodes --all --timeout=180s
+      - name: Validate default driver
+        run: 'cat "$MINIKUBE_HOME/.minikube/machines/minikube/config.json" | jq ".DriverName" | grep none'
   default-inputs:
     name: Defaults
     runs-on: ${{ matrix.os }}
@@ -16,9 +59,11 @@ jobs:
         kubernetes: [v1.35.2,v1.34.5,v1.33.9,v1.32.13,v1.31.14]
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - name: Setup Node
-        uses: actions/setup-node@master
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
       - name: Test Action
         uses: ./
         with:
@@ -30,7 +75,7 @@ jobs:
       - name: Validate Cluster
         run: kubectl get nodes
       - name: Validate default driver
-        run: 'cat $MINIKUBE_HOME/.minikube/machines/minikube/config.json | jq ".DriverName" | grep none'
+        run: 'cat "$MINIKUBE_HOME/.minikube/machines/minikube/config.json" | jq ".DriverName" | grep none'
   docker-driver:
     name: Docker driver
     runs-on: ${{ matrix.os }}
@@ -39,9 +84,11 @@ jobs:
         os: [ubuntu-latest, ubuntu-24.04-arm]
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - name: Setup Node
-        uses: actions/setup-node@master
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
       - name: Test Action
         uses: ./
         with:
@@ -54,7 +101,7 @@ jobs:
       - name: Validate Cluster
         run: kubectl get nodes
       - name: Validate Docker driver
-        run: 'cat $MINIKUBE_HOME/.minikube/machines/minikube/config.json | jq ".DriverName" | grep docker'
+        run: 'cat "$MINIKUBE_HOME/.minikube/machines/minikube/config.json" | jq ".DriverName" | grep docker'
       - name: Validate ssh access
         run: minikube ssh --native-ssh=false "cat /etc/os-release"
   extra-args:
@@ -65,9 +112,11 @@ jobs:
         os: [ubuntu-latest, ubuntu-24.04-arm]
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - name: Setup Node
-        uses: actions/setup-node@master
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
       - name: Test Action
         uses: ./
         with:
@@ -89,9 +138,11 @@ jobs:
         os: [ubuntu-latest, ubuntu-24.04-arm]
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - name: Setup Node
-        uses: actions/setup-node@master
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
       - name: Test Action
         uses: ./
         with:
@@ -115,9 +166,11 @@ jobs:
         container_runtime: ['containerd']
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - name: Setup Node
-        uses: actions/setup-node@master
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
       - name: Test Action
         uses: ./
         with:
@@ -131,7 +184,7 @@ jobs:
       - name: Validate Cluster
         run: kubectl get nodes
       - name: Validate container runtime (${{ matrix.container_runtime }})
-        run: 'cat $MINIKUBE_HOME/.minikube/machines/minikube/config.json | jq ".Driver.NodeConfig.ContainerRuntime" | grep "${{ matrix.container_runtime }}"'
+        run: 'cat "$MINIKUBE_HOME/.minikube/machines/minikube/config.json" | jq ".Driver.NodeConfig.ContainerRuntime" | grep "${{ matrix.container_runtime }}"'
   unsupported:
     name: Unsupported K8s versions
     runs-on: ubuntu-22.04
@@ -140,9 +193,11 @@ jobs:
         kubernetes: [v1.30.14,v1.29.14,v1.28.15,v1.27.16,v1.26.15]
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - name: Setup Node
-        uses: actions/setup-node@master
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
       - name: Test Action
         uses: ./
         with:
@@ -154,7 +209,7 @@ jobs:
       - name: Validate Cluster
         run: kubectl get nodes
       - name: Validate default driver
-        run: 'cat $MINIKUBE_HOME/.minikube/machines/minikube/config.json | jq ".DriverName" | grep none'
+        run: 'cat "$MINIKUBE_HOME/.minikube/machines/minikube/config.json" | jq ".DriverName" | grep none'
   # Validates the --force workaround for K8s versions not in Minikube's
   # built-in supported list. When the requested version is newer (or older)
   # than what Minikube ships with, the action should:
@@ -171,9 +226,11 @@ jobs:
       KUBERNETES_VERSION: v1.33.0
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - name: Setup Node
-        uses: actions/setup-node@master
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
       - name: Verify K8s version is not in Minikube supported list
         run: |
           curl -sL "https://github.com/kubernetes/minikube/releases/download/${MINIKUBE_VERSION}/minikube-linux-amd64" -o /tmp/minikube

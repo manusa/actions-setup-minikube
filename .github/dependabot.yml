@@ -1,0 +1,10 @@
+# Keeps the SHA-pinned actions in .github/workflows up to date (SHA pins get
+# no Dependabot security alerts, so version updates are the only signal).
+# npm is intentionally excluded: dependency updates must also commit the
+# pruned production node_modules/ (see AGENTS.md "Updating Dependencies").
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
