@@ -207,9 +207,20 @@ describe('UserService', () => {
 
 ### Adding Support for a New Kubernetes Version
 
-1. Update E2E test matrix in `.github/workflows/runner.yml`
-2. Test locally with `npm test`
-3. Push and verify CI workflows pass
+This is periodic maintenance of the E2E matrix. New Kubernetes versions need no source change: `check-kubernetes-version.js` classifies a version missing from Minikube's built-in list as `UNSUPPORTED`, and `install.js` then adds `--force`. A Minikube bump may still need one (see step 1).
+
+1. Find the latest patch of each Kubernetes minor and the latest Minikube release (`gh release list --repo kubernetes/minikube`). The default `gh release list` page (30 releases) misses the older minors, so use:
+   ```shell
+   gh release list --repo kubernetes/kubernetes --exclude-pre-releases --limit 400 --json tagName --jq '[.[].tagName | select(test("^v1\\.[0-9]+\\.[0-9]+$"))] | group_by(split(".")[1] | tonumber) | map(max_by(split(".")[2] | tonumber)) | reverse | .[]'
+   ```
+   Read the Minikube release notes for changed defaults the action relies on (driver, container runtime). Don't work around those in `runner.yml`: the jobs that use the action's defaults show what users get, so preserve the existing behavior in the action instead.
+2. Update `.github/workflows/runner.yml`:
+   - `minikube version` in every job except `unsupported-with-force`. Leave both of that job's versions alone: it pins an older Minikube on purpose, and its `Verify K8s version is not in Minikube supported list` step checks that the Kubernetes version is still outside that Minikube's list.
+   - `default-inputs` and `container-runtime`: the five newest minors at their latest upstream patch, even when that patch is newer than Minikube's list. `container-runtime` also keeps `v1.26.15` as its oldest-version canary.
+   - `unsupported`: the minors that left `default-inputs`, down to the oldest minor Minikube supports (the last entry of `minikube config defaults kubernetes-version`), plus `v1.26.15`, which is older than that and keeps the too-old `--force` path covered on the `none` driver.
+   - `os-smoke`, `docker-driver` and `ingress`: the newest minor. `extra-args`: the second-newest minor.
+3. Update the `minikube version` and `kubernetes version` in the `README.md` usage example. The release commit only moves the action tag in that example, so merge it together with, or after, any action change the new Minikube needs, and release soon after, so the example on `master` never names a Minikube the latest release can't start.
+4. Run `npm test`, then open a pull request: `runner.yml` runs only on pull requests and pushes to `master`. If a version fails E2E, find the cause before swapping it out; earlier rounds replaced a failing `v1.20.15` canary with `v1.26.15` and reverted an `unsupported-with-force` bump.
 
 ### Adding Support for a New Architecture
 
