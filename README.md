@@ -75,8 +75,8 @@ bash-only syntax such as brace expansion does not:
         env:
           MAX_PODS: 50
         with:
-          minikube version: 'v1.38.1'
-          kubernetes version: 'v1.35.2'
+          minikube version: 'v1.39.0'
+          kubernetes version: 'v1.37.1'
           start args: '--addons=ingress --extra-config=kubelet.max-pods="$MAX_PODS"'
 ```
 
